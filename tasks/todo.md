@@ -229,28 +229,102 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 6 — Batcave Splash Screen
+## Phase 6 — Batman Beyond Loading Screen
+
+> Inspired by Batman Beyond cyberpunk aesthetic: neon-lit rainy alley, silhouette walking
+> toward viewer, neon signs, wet floor reflection. Replaces the original batcave/bat-swarm concept.
+
+### Color palette (splash-only overrides)
+- Background: `#0a0008` (deep purple-black)
+- Neon crimson: `#cc0033` / `#ff0044`
+- Neon magenta: `#ff2d7a` / `#e0007a`
+- Teal accent: `#00aacc`
+- Rain: `#2a2a3a` (dim blue-gray)
+- Figure: `#111111` (near-black silhouette)
+- Bat symbol on chest: `#cc0033`
+
+### ASCII art assets (define as constants at top of file)
+
+**Batman Beyond silhouette** (~12 rows, slim build, pointy ears, red symbol):
+```
+     /\   /\
+    /  \ /  \
+   /    V    \
+  |   (   )   |
+  |    | |    |
+   \   |•|   /
+    \  | |  /
+     \ |_| /
+      \|_|/
+       | |
+      /   \
+     /     \
+```
+(The `•` char on the chest = bat symbol in `#cc0033`)
+
+**Neon sign (left side, vertical)** — box-drawn ASCII, crimson:
+```
+╔═══╗
+║ B ║
+║ A ║
+║ T ║
+╚═══╝
+```
+
+**Alley perspective lines** — converge to center vanishing point using `\`, `/`, `|`, `░`, `▒`
+
+**Rain characters**: `│`, `╎`, `'`, `.` — randomly distributed, falling each tick
+
+**Wet floor reflection**: mirror of silhouette below a `─` horizon line, rendered at ~30% brightness
+
+### Animation phases
 
 - [ ] Write `batman_code/widgets/batcave.py`
-  - Class: `BatcaveScreen(Screen)` — full-screen Textual Screen
-  - **Act 1 — Bat swarm (frames 1–15, 0.1s each):**
-    - Maintain a list of bat positions and velocities across screen width
-    - Bat characters: `"/\\", ">v<", "(^)", ">\u003c"` randomly chosen per bat
-    - Each frame: move bats rightward + slight vertical drift, render as Rich Text on black
-    - New bats spawn at left edge each frame, accumulating
-    - Bats rendered in dim white, occasional flash to bat-gold
-  - **Act 2 — Reveal (frames 16–30, 0.12s each):**
-    - Bats scatter outward (reverse velocity, exit screen edges)
-    - Batcave ASCII art fades in center: stalactites top, equipment silhouettes, bat-symbol
-    - Color: starts `#1a1a1a` (near black), fades to `#1a3a5c` (gotham blue) over 8 frames
-    - Bat-symbol title glitches in with corrupted chars then stabilizes to clean gold
-  - **Final frame:**
-    - Static batcave with glowing bat-symbol in `#f5c518`
-    - "BATCOMPUTER ONLINE" text fades in below
-    - Holds for 1.5s, then transitions to main app
-  - Skippable: any keypress or `--no-splash` flag dismisses immediately
-  - `on_key()` handler posts `DismissSplash` message
-  - ASCII art constants defined at top of file (batcave silhouette, bat-symbol)
+  - Class: `BatcaveScreen(Screen[None])` — full-screen Textual Screen
+  - Tick interval: 0.06s
+  - `--no-splash`: call `self.dismiss()` immediately in `on_mount()`
+  - `on_key()`: call `self._finish()` to cancel timer and dismiss
+
+  - **Phase `rain` (~18 ticks = 1.1s):**
+    - Initialize rain drop list: each drop has `(col, row, char, speed)`
+    - Each tick: advance drops downward, wrap at bottom, spawn new drops at top
+    - Render as full-screen grid; rain chars in `#2a2a3a`, background `#0a0008`
+    - Rain density increases over the phase (more drops spawn per tick)
+
+  - **Phase `alley` (~25 ticks = 1.5s):**
+    - Rain continues in background
+    - Alley perspective lines fade in from edges toward center vanishing point
+    - Left wall: `\` chars descending left-to-right
+    - Right wall: `/` chars descending right-to-left
+    - Floor: `─` chars converging to center
+    - Neon sign on left side flickers in: alternate between full bright (`#ff2d7a`) and dim (`#660022`) every 2–3 ticks to simulate neon flicker
+    - Optional: small teal accent neon on right side (`#00aacc`)
+    - Colors fade in gradually using linear interpolation on hex components
+
+  - **Phase `reveal` (~16 ticks = 1.0s):**
+    - Rain + alley remain
+    - Batman Beyond silhouette materializes center screen, top-down (rows appear one by one)
+    - Behind figure: radial glow — center columns shift from `#0a0008` → `#660022` → `#cc0033`
+    - Bat symbol row (`•`) renders in `#cc0033`, pulses (alternates `#cc0033` ↔ `#ff0044`)
+    - Figure rows appear with slight glitch: random chars first, then stabilize
+
+  - **Phase `hold` (~25 ticks = 1.5s):**
+    - Full scene: rain animating, neons flickering, static figure
+    - Wet floor reflection: render silhouette mirrored below horizon `─` line at 30% brightness
+      - Reflection color: multiply each channel by 0.3, add slight blue tint
+    - "BATMAN BEYOND" title appears above figure in `#ff2d7a` with neon-glow style (bright center, dim edges)
+    - "INITIALIZING..." subtitle fades in below in `#cc0033`
+    - After hold ticks complete: call `self._finish()`
+
+  - **Helper: `_render_frame(w, h) -> Text`**
+    - Compose full grid each tick: background → alley → rain → figure → reflection → UI text
+    - Use Rich `Text` with per-span color styling
+
+  - **Helper: `_lerp_color(c1, c2, t) -> str`**
+    - Linear interpolate between two hex colors at t∈[0,1], return hex string
+
+  - **Helper: `_glitch_str(s, intensity) -> str`**
+    - Replace random non-space chars with chars from `"▓▒░╬╫╪┼╳※▪◆◇▄▀█"`
 
 ---
 
