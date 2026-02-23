@@ -1,12 +1,10 @@
-"""Batman Beyond loading screen for bat-code.
+"""Batcave loading screen for bat-code.
 
-Cyberpunk neon-alley animation:
-  Phase rain   — rain streaks fall across a dark screen
-  Phase alley  — perspective walls and neon signs flicker in
-  Phase reveal — Batman Beyond silhouette materializes center
-  Phase hold   — full scene with rain, neons, reflection, title text
+Batman ASCII portrait materializes from glitch noise.
+Art cells settle smoothly via per-cell progress tracking.
+Background noise uses lightweight fade-out entries for performance.
 
-Any keypress or --no-splash skips immediately.
+Press any key or pass --no-splash to skip.
 """
 
 from __future__ import annotations
@@ -19,145 +17,107 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static
 
-# ── Color palette ─────────────────────────────────────────────────────────────
+# ── Palette ───────────────────────────────────────────────────────────────────
 
-BG          = "#0a0008"
-RAIN_DIM    = "#1a1428"
-RAIN_MID    = "#2a2a3a"
-NEON_RED    = "#cc0033"
-NEON_BRIGHT = "#ff2255"
-NEON_MAG    = "#e0007a"
-NEON_MAG_HI = "#ff2d7a"
-NEON_TEAL   = "#00aacc"
-WALL_DIM    = "#150508"
-WALL_MID    = "#2a080f"
-BAT_BODY    = "#0d0d0d"
-BAT_SYMBOL  = "#cc0033"
-BAT_SYM_HI  = "#ff0044"
-GLOW_CORE   = "#440015"
-GLOW_MID    = "#330011"
+BG = "#050008"
 
-GLITCH_CHARS = "▓▒░╬╫╪┼╳※▪◆▄▀█"
+_GLITCH_COLORS = [
+    "#ff0000", "#cc0000", "#ff2200",
+    "#dd0000", "#ff1100", "#8b0000",
+    "#ff3300", "#ff0000", "#aa0000",
+    "#ffffff", "#ff0000", "#cc0000",
+]
 
-# ── ASCII assets ──────────────────────────────────────────────────────────────
+_BRIGHTNESS: dict[str, float] = {
+    "@": 1.0,  "#": 0.95, "8": 0.90, "0": 0.85, "%": 0.80,
+    "&": 0.75, "$": 0.70, "W": 0.68, "M": 0.66, "B": 0.64,
+    "Q": 0.62, "N": 0.60, "H": 0.58, "D": 0.56, "R": 0.54,
+    "U": 0.52, "m": 0.50, "w": 0.48, "b": 0.46, "d": 0.44,
+    "q": 0.42, "p": 0.40, "h": 0.38, "k": 0.36, "n": 0.34,
+    "*": 0.32, "+": 0.30, "=": 0.28, "~": 0.26, "^": 0.24,
+    "o": 0.22, "c": 0.20, "r": 0.18, "!": 0.16, ";": 0.14,
+    ":": 0.12, ",": 0.10, ".": 0.08, "`": 0.06, "'": 0.04,
+}
 
-# Batman Beyond silhouette — slim suit, pointed ears, red chest symbol.
-# Each entry: (line_string, is_symbol_row)
-# The character '*' on a symbol row is rendered as the red bat symbol.
-FIGURE_LINES: tuple[tuple[str, bool], ...] = (
-    (r"   /\     /\   ", False),
-    (r"  /  \   /  \  ", False),
-    (r" / /\ \_/ /\ \ ", False),
-    (r"| |   (_)   | |", False),
-    (r" \ \  / \  / / ", False),
-    (r"  \_\/   \/_/  ", False),
-    (r"   /|     |\   ", False),
-    (r"  / |  *  | \  ", True ),   # * = bat symbol, rendered in red
-    (r" /  |     |  \ ", False),
-    (r"    |     |    ", False),
-    (r"    |     |    ", False),
-    (r"     \   /     ", False),
-    (r"      | |      ", False),
-    (r"      | |      ", False),
-    (r"     /   \     ", False),
-)
-
-# Left neon sign (crimson/magenta)
-NEON_SIGN: tuple[str, ...] = (
-    "╔═══╗",
-    "║ G ║",
-    "║ T ║",
-    "║ M ║",
-    "║   ║",
-    "║ 2 ║",
-    "║ 0 ║",
-    "║ 4 ║",
-    "╚═══╝",
-)
-
-# Right accent sign (teal)
-TEAL_SIGN: tuple[str, ...] = (
-    "┌──┐",
-    "│NE│",
-    "│ON│",
-    "└──┘",
-)
-
-_RAIN_CHARS = ("│", "╎", "╷", "·")
-
-# ── Grid helpers ──────────────────────────────────────────────────────────────
-
-# Grid[row][col] = (char, color_hex)
-Grid = list[list[tuple[str, str]]]
-
-
-def _make_grid(w: int, h: int) -> Grid:
-    return [[(" ", BG)] * w for _ in range(h)]
-
-
-def _set(grid: Grid, row: int, col: int, char: str, color: str) -> None:
-    if 0 <= row < len(grid) and 0 <= col < len(grid[0]):
-        grid[row][col] = (char, color)
-
-
-def _grid_to_text(grid: Grid) -> Text:
-    text = Text(overflow="fold", no_wrap=True)
-    for row in grid:
-        col = 0
-        while col < len(row):
-            ch, color = row[col]
-            start = col
-            while col < len(row) and row[col][1] == color:
-                col += 1
-            text.append("".join(r[0] for r in row[start:col]), style=color)
-        text.append("\n")
-    return text
-
-
-def _lerp(a: int, b: int, t: float) -> int:
-    return int(a + (b - a) * max(0.0, min(1.0, t)))
-
+def _locked_color(ch: str) -> str:
+    b = _BRIGHTNESS.get(ch, 0.3)
+    r = int(40 + b * 215)
+    g = int(b * 18)
+    bv = int(b * 8)
+    return f"#{r:02x}{g:02x}{bv:02x}"
 
 def _lerp_color(c1: str, c2: str, t: float) -> str:
-    t = max(0.0, min(1.0, t))
     r1, g1, b1 = int(c1[1:3], 16), int(c1[3:5], 16), int(c1[5:7], 16)
     r2, g2, b2 = int(c2[1:3], 16), int(c2[3:5], 16), int(c2[5:7], 16)
-    return f"#{_lerp(r1,r2,t):02x}{_lerp(g1,g2,t):02x}{_lerp(b1,b2,t):02x}"
-
-
-def _dim_color(c: str, factor: float) -> str:
-    r = int(int(c[1:3], 16) * factor)
-    g = int(int(c[3:5], 16) * factor)
-    b = int(int(c[5:7], 16) * factor)
+    r = int(r1 + (r2 - r1) * t)
+    g = int(g1 + (g2 - g1) * t)
+    b = int(b1 + (b2 - b1) * t)
     return f"#{r:02x}{g:02x}{b:02x}"
 
+_GLITCH = list("▓▒░╬╫╪┼╳※▪◆▄▀█@#$%&*!?/\\|+=~^<>{}[]0123456789")
+_GLITCH_MID = list("+=~^*:;!?|/\\<>")   # medium density — transitional
+_GLITCH_SPARSE = list(".:,;'` ")          # sparse — near-invisible before vanishing
 
-def _glitch_str(s: str, intensity: float) -> str:
-    chars = list(s)
-    for i, c in enumerate(chars):
-        if c not in (" ", "*") and random.random() < intensity:
-            chars[i] = random.choice(GLITCH_CHARS)
-    return "".join(chars)
+# ── Batman ASCII art ──────────────────────────────────────────────────────────
 
+BATMAN_ART = [
+    r"                      .                .                      ",
+    r"                     .:.              .:.                     ",
+    r"                    .:;:.            .:;:.                    ",
+    r"                   .:;;;;:.        .:;;;;:.                   ",
+    r"                  .:;;;;;;;:.    .:;;;;;;;:.                  ",
+    r"                .::;;;;;;;;;:::::;;;;;;;;;::.                 ",
+    r"              .::;;;;;;;;;;;;;;;;;;;;;;;;;;;;::.              ",
+    r"            .::;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;::.          ",
+    r"          .::;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:.       ",
+    r"        .:;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@;:.      ",
+    r"       .:;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@;:.     ",
+    r"      .:;@@@@@@@     @@@@@@@@@@@@@@@@@     @@@@@@@@@@@;:.    ",
+    r"      .:;@@@@@@@     @@@@@@@@@@@@@@@@@     @@@@@@@@@@@;:.    ",
+    r"      .:;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@;:.    ",
+    r"       .:;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@;:.      ",
+    r"        .:;@@@@@@@                           @@@@@@@;:.      ",
+    r"         .:;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@;:.       ",
+    r"          .:;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@;:.        ",
+    r"           .:;@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@;:.          ",
+    r"             .::;;@@@@@@@@@@@@@@@@@@@@@@@@@@@;;::.           ",
+    r"               .::;;@@@   @@@@@@@@@   @@@;;::.               ",
+    r"                 .::;;@   @@@@@@@@@   @;;::.                 ",
+    r"                    .:;@@@@@@@@@@@@@@@;:.                    ",
+    r"                  .:;@@@@@@     @@@@@@@@@;:.                 ",
+    r"                .:;@@@@@@@       @@@@@@@@@@@;:.              ",
+    r"               .:;@@@@@@@         @@@@@@@@@@@;:.             ",
+    r"             .:;@@@@@@@@@         @@@@@@@@@@@@@;:.           ",
+    r"           .:;@@@@@@@@@@@         @@@@@@@@@@@@@@@;:.         ",
+]
 
-# ── Drop dataclass ─────────────────────────────────────────────────────────────
+# ── Art cell — rich settling state ────────────────────────────────────────────
 
 @dataclass
-class _Drop:
-    col: int
-    row: float
-    speed: float
-    char: str
+class _MatCell:
+    final_ch:    str
+    final_color: str
+    delay:       int       # ticks of pure chaos before settling
+    ticks_left:  int
+    total_ticks: int
+    char_tick:   int = 0
+    cur_char:    str = ""
+
+    @property
+    def progress(self) -> float:
+        if self.total_ticks <= 0:
+            return 1.0
+        return 1.0 - (self.ticks_left / self.total_ticks)
 
 
 # ── Screen ────────────────────────────────────────────────────────────────────
 
 class BatcaveScreen(Screen[None]):
-    """Batman Beyond cyberpunk alley loading screen."""
+    """Batman portrait materializes from glitch noise."""
 
     DEFAULT_CSS = """
     BatcaveScreen {
-        background: #0a0008;
+        background: #050008;
         overflow: hidden;
     }
     #bb-display {
@@ -166,25 +126,36 @@ class BatcaveScreen(Screen[None]):
     }
     """
 
-    _TICK_S       = 0.06
-    _RAIN_TICKS   = 18
-    _ALLEY_TICKS  = 25
-    _REVEAL_TICKS = 18
-    _HOLD_TICKS   = 28
+    _TICK_S = 0.05  # 20 fps
+
+    # Art cell timing — longer settle for smoother snap, tight finish window
+    _ART_DELAY_MIN  = 18
+    _ART_DELAY_MAX  = 28
+    _ART_SETTLE_MIN = 38
+    _ART_SETTLE_MAX = 50
+
+    # Noise — lightweight background cells
+    _NOISE_FILL     = 0.35   # fraction of screen covered by noise
+    _NOISE_LIFE_MIN = 8      # min ticks before a noise cell fades
+    _NOISE_LIFE_MAX = 35     # max ticks
+
+    _HOLD_TICKS = 40
 
     def __init__(self, no_splash: bool = False) -> None:
         super().__init__()
-        self._no_splash    = no_splash
-        self._phase        = "rain"
-        self._tick         = 0
-        self._drops: list[_Drop] = []
-        self._alley_p      = 0.0
-        self._neon_on      = False
-        self._neon_tick    = 0
-        self._reveal_row   = 0
-        self._glitch       = 1.0
-        self._timer        = None
+        self._no_splash = no_splash
+        self._art_grid: dict[tuple, _MatCell] = {}  # art cells settling
+        self._locked:   dict[tuple, tuple]    = {}  # (r,c) → (char, color)
+        self._art_keys: set[tuple] = set()          # all art positions (for collision)
+        # Noise: list of [row, col, ticks_remaining, char]
+        self._noise: list[list] = []
+        self._glitch_t = 0
+        self._hold_t   = 0
+        self._holding  = False
+        self._timer    = None
         self._display: Static | None = None
+        self._w = 0
+        self._h = 0
 
     def compose(self) -> ComposeResult:
         self._display = Static("", id="bb-display")
@@ -194,296 +165,200 @@ class BatcaveScreen(Screen[None]):
         if self._no_splash:
             self.dismiss()
             return
-        w = self.app.size.width
-        h = self.app.size.height
-        self._init_rain(w, h)
-        self._timer = self.set_interval(self._TICK_S, self._tick_handler)
+        self._w, self._h = self.app.size.width, self.app.size.height
+        self._build(self._w, self._h)
+        self._timer = self.set_interval(self._TICK_S, self._tick)
 
     def on_key(self) -> None:
         self._finish()
 
-    # ── Init ──────────────────────────────────────────────────────────────────
+    # ── Setup ─────────────────────────────────────────────────────────────────
 
-    def _init_rain(self, w: int, h: int) -> None:
-        # Seed drops staggered across screen so it doesn't look like they all
-        # start at the top simultaneously.
-        step = max(1, w // 60)
-        for col in range(0, w, step):
-            self._drops.append(_Drop(
-                col=col,
-                row=float(random.randint(0, h - 1)),
-                speed=random.uniform(0.35, 1.1),
-                char=random.choice(_RAIN_CHARS),
-            ))
+    def _build(self, w: int, h: int) -> None:
+        art    = BATMAN_ART
+        art_h  = len(art)
+        art_w  = max(len(line) for line in art)
+        off_r  = max(0, (h - art_h) // 2)
+        off_c  = max(0, (w - art_w) // 2)
+
+        # Art cells — full settling behavior
+        for r, line in enumerate(art):
+            for c, ch in enumerate(line):
+                if ch != " ":
+                    key = (r + off_r, c + off_c)
+                    total = random.randint(self._ART_SETTLE_MIN, self._ART_SETTLE_MAX)
+                    delay = random.randint(self._ART_DELAY_MIN, self._ART_DELAY_MAX)
+                    self._art_grid[key] = _MatCell(
+                        final_ch=ch, final_color=_locked_color(ch),
+                        delay=delay, ticks_left=total, total_ticks=total,
+                        cur_char=random.choice(_GLITCH),
+                    )
+                    self._art_keys.add(key)
+
+        # Noise cells — [row, col, life, char, total_life, tick_counter]
+        noise_count = int(w * h * self._NOISE_FILL)
+        for _ in range(noise_count):
+            nr = random.randint(0, h - 1)
+            nc = random.randint(0, w - 1)
+            if (nr, nc) not in self._art_keys:
+                life = random.randint(self._NOISE_LIFE_MIN, self._NOISE_LIFE_MAX)
+                self._noise.append([nr, nc, life, random.choice(_GLITCH), life, 0])
 
     # ── Tick ──────────────────────────────────────────────────────────────────
 
-    def _tick_handler(self) -> None:
-        self._tick += 1
-        w, h = self.app.size.width, self.app.size.height
+    def _tick(self) -> None:
+        self._glitch_t += 1
 
-        if self._phase == "rain":
-            if self._tick >= self._RAIN_TICKS:
-                self._phase = "alley"
-                self._tick = 0
-
-        elif self._phase == "alley":
-            self._alley_p = min(1.0, self._tick / self._ALLEY_TICKS)
-            self._neon_tick += 1
-            if self._neon_tick % 3 == 0:
-                self._neon_on = not self._neon_on
-            if self._tick >= self._ALLEY_TICKS:
-                self._neon_on = True
-                self._phase = "reveal"
-                self._tick = 0
-                self._glitch = 1.0
-
-        elif self._phase == "reveal":
-            p = self._tick / self._REVEAL_TICKS
-            self._reveal_row = int(p * len(FIGURE_LINES))
-            self._glitch = max(0.0, 1.0 - p * 1.5)
-            self._neon_tick += 1
-            if self._neon_tick % 4 == 0:
-                self._neon_on = not self._neon_on
-            if self._tick >= self._REVEAL_TICKS:
-                self._reveal_row = len(FIGURE_LINES)
-                self._glitch = 0.0
-                self._phase = "hold"
-                self._tick = 0
-
-        elif self._phase == "hold":
-            self._neon_tick += 1
-            if self._neon_tick % 6 == 0:
-                self._neon_on = not self._neon_on
-            if self._tick >= self._HOLD_TICKS:
+        if self._holding:
+            self._hold_t += 1
+            if self._hold_t >= self._HOLD_TICKS:
                 self._finish()
-
-        self._advance_rain(w, h)
-        grid = self._render_frame(w, h)
-        if self._display:
-            self._display.update(_grid_to_text(grid))
-
-    # ── Rain ──────────────────────────────────────────────────────────────────
-
-    def _advance_rain(self, w: int, h: int) -> None:
-        for drop in self._drops:
-            drop.row += drop.speed
-            if drop.row >= h:
-                drop.row = 0.0
-                drop.col = random.randint(0, max(0, w - 1))
-                drop.char = random.choice(_RAIN_CHARS)
-                drop.speed = random.uniform(0.35, 1.1)
-
-    def _draw_rain(self, grid: Grid, h: int) -> None:
-        for drop in self._drops:
-            r, c = int(drop.row), drop.col
-            trail = (
-                (r,     drop.char, 0.85),
-                (r - 1, "╷",       0.45),
-                (r - 2, "·",       0.20),
-                (r - 3, "·",       0.08),
-            )
-            for tr, ch, alpha in trail:
-                color = _lerp_color(BG, RAIN_MID, alpha)
-                _set(grid, tr, c, ch, color)
-
-    # ── Alley ─────────────────────────────────────────────────────────────────
-
-    def _draw_alley(self, grid: Grid, w: int, h: int, p: float) -> None:
-        cx = w // 2
-        vy = h // 3  # vanishing point row
-
-        # Glow at vanishing point (atmospheric backlight)
-        for dr in range(-4, 8):
-            for dc in range(-12, 13):
-                gr, gc = vy + dr, cx + dc
-                dist = (abs(dc) / 12.0) * 0.7 + (abs(dr) / 8.0) * 0.3
-                intensity = p * max(0.0, 1.0 - dist)
-                glow = _lerp_color(BG, GLOW_CORE, intensity * 0.9)
-                if 0 <= gr < h and 0 <= gc < w and grid[gr][gc][0] == " ":
-                    _set(grid, gr, gc, " ", glow)
-
-        # Perspective walls
-        for row in range(vy, h):
-            t = (row - vy) / max(1, h - vy - 1)
-            left_col  = max(0, int(cx - t * cx * 0.88))
-            right_col = min(w - 1, int(cx + t * cx * 0.88))
-            wall_c = _lerp_color(BG, WALL_MID, p * min(1.0, t * 1.4))
-
-            ch_l = "\\" if (row % 2 == 0) else "│"
-            ch_r = "/"  if (row % 2 == 0) else "│"
-            _set(grid, row, left_col,  ch_l, wall_c)
-            _set(grid, row, right_col, ch_r, wall_c)
-
-            # Fill wall faces with dim color
-            fill_c = _lerp_color(BG, WALL_DIM, p * 0.6)
-            for c in range(0, left_col):
-                if grid[row][c][0] == " ":
-                    _set(grid, row, c, " ", fill_c)
-            for c in range(right_col + 1, w):
-                if grid[row][c][0] == " ":
-                    _set(grid, row, c, " ", fill_c)
-
-        # Floor
-        if p > 0.3:
-            floor_p = (p - 0.3) / 0.7
-            for c in range(w):
-                dist = abs(c - cx) / max(1, cx)
-                fc = _lerp_color(BG, "#200808", floor_p * (1.0 - dist * 0.6))
-                _set(grid, h - 1, c, "─", fc)
-
-        # Neon signs
-        self._draw_neon_signs(grid, w, h, p)
-
-    def _draw_neon_signs(self, grid: Grid, w: int, h: int, p: float) -> None:
-        if p < 0.2:
-            return
-        sign_p = (p - 0.2) / 0.8
-
-        # Flicker: bright or dim
-        neon_c = NEON_MAG_HI if self._neon_on else _dim_color(NEON_MAG, 0.18)
-        teal_c = NEON_TEAL   if self._neon_on else _dim_color(NEON_TEAL, 0.15)
-
-        # Left neon sign
-        sign_row = h // 4
-        sign_col = 2
-        rows_show = max(1, int(sign_p * len(NEON_SIGN)))
-        for i, line in enumerate(NEON_SIGN[:rows_show]):
-            for j, ch in enumerate(line):
-                _set(grid, sign_row + i, sign_col + j, ch, neon_c)
-
-        # Right teal sign
-        tsign_row = h // 3
-        tsign_col = max(0, w - 6)
-        rows_show_t = max(1, int(sign_p * len(TEAL_SIGN)))
-        for i, line in enumerate(TEAL_SIGN[:rows_show_t]):
-            for j, ch in enumerate(line):
-                c = tsign_col + j
-                if 0 <= c < w:
-                    _set(grid, tsign_row + i, c, ch, teal_c)
-
-    # ── Silhouette ────────────────────────────────────────────────────────────
-
-    def _draw_figure(self, grid: Grid, w: int, h: int) -> None:
-        if self._reveal_row == 0:
             return
 
-        fig_w   = max(len(line) for line, _ in FIGURE_LINES)
-        fig_col = (w - fig_w) // 2
-        fig_row = h // 3
+        # ── Advance art cells ────────────────────────────────────────────────
+        newly_locked: list[tuple] = []
 
-        # Radial backlight glow behind figure
-        glow_p = min(1.0, self._reveal_row / max(1, len(FIGURE_LINES)))
-        cx = w // 2
-        for dr in range(-1, len(FIGURE_LINES) + 1):
-            gy = fig_row + dr
-            for dc in range(-(fig_w // 2) - 5, fig_w // 2 + 6):
-                gc = cx + dc
-                dist = abs(dc) / (fig_w // 2 + 5)
-                if dist < 1.0 and 0 <= gy < h and 0 <= gc < w:
-                    if grid[gy][gc][0] == " ":
-                        g = _lerp_color(BG, GLOW_CORE, glow_p * (1.0 - dist) * 0.65)
-                        _set(grid, gy, gc, " ", g)
-
-        # Silhouette rows
-        pulse = (self._tick % 3 < 2)
-        sym_color = BAT_SYM_HI if pulse else BAT_SYMBOL
-
-        for i, (line, is_sym) in enumerate(FIGURE_LINES[:self._reveal_row]):
-            row = fig_row + i
-            is_last = (i == self._reveal_row - 1)
-            rendered = (
-                _glitch_str(line, self._glitch * 0.55)
-                if is_last and self._glitch > 0.05
-                else line
-            )
-            for j, ch in enumerate(rendered):
-                col = fig_col + j
-                if ch == " ":
-                    continue
-                if is_sym and ch == "*":
-                    _set(grid, row, col, "✦", sym_color)
-                elif is_sym:
-                    _set(grid, row, col, ch, NEON_RED)
-                else:
-                    _set(grid, row, col, ch, BAT_BODY)
-
-    # ── Reflection ────────────────────────────────────────────────────────────
-
-    def _draw_reflection(self, grid: Grid, w: int, h: int) -> None:
-        fig_w   = max(len(line) for line, _ in FIGURE_LINES)
-        fig_col = (w - fig_w) // 2
-        fig_row = h // 3
-        horizon = fig_row + len(FIGURE_LINES)
-
-        # Horizon line
-        for c in range(w):
-            dist = abs(c - w // 2) / max(1, w // 2)
-            hc = _lerp_color(WALL_MID, BG, dist * 0.7)
-            _set(grid, horizon, c, "─", hc)
-
-        # Mirrored figure below horizon
-        total = len(FIGURE_LINES)
-        for i, (line, is_sym) in enumerate(FIGURE_LINES):
-            refl_row = horizon + 1 + (total - 1 - i)
-            if refl_row >= h:
+        for key, mat in self._art_grid.items():
+            if mat.delay > 0:
+                mat.delay -= 1
+                mat.cur_char = random.choice(_GLITCH)
                 continue
-            for j, ch in enumerate(line):
-                col = fig_col + j
-                if ch == " " or not (0 <= col < w):
-                    continue
-                # Dim + slight blue tint for wet reflection
-                if is_sym and ch == "*":
-                    _set(grid, refl_row, col, "·", _dim_color(NEON_RED, 0.15))
+
+            mat.ticks_left -= 1
+            mat.char_tick += 1
+            p = mat.progress
+
+            if p >= 0.95:
+                mat.cur_char = mat.final_ch
+            else:
+                if p < 0.3:
+                    change_every = 1
+                elif p < 0.6:
+                    change_every = 2
+                elif p < 0.8:
+                    change_every = 3
                 else:
-                    rv = int(0x0d * 0.25)
-                    bv = int(0x1a * 0.35)
-                    _set(grid, refl_row, col, ch, f"#{rv:02x}{rv:02x}{bv:02x}")
+                    change_every = 5
 
-    # ── Title ─────────────────────────────────────────────────────────────────
+                if mat.char_tick >= change_every:
+                    mat.char_tick = 0
+                    if random.random() < p * 0.85:
+                        mat.cur_char = mat.final_ch
+                    else:
+                        mat.cur_char = random.choice(_GLITCH)
 
-    def _draw_title(self, grid: Grid, w: int, h: int) -> None:
-        title    = "B A T M A N   B E Y O N D"
-        subtitle = "I N I T I A L I Z I N G . . ."
-        hint     = "press any key to continue"
+            if mat.ticks_left <= 0:
+                newly_locked.append(key)
 
-        tc = (w - len(title))    // 2
-        sc = (w - len(subtitle)) // 2
-        hc = (w - len(hint))     // 2
+        for key in newly_locked:
+            mat = self._art_grid.pop(key)
+            self._locked[key] = (mat.final_ch, mat.final_color)
 
-        title_row = max(1, h // 3 - 3)
-        if title_row > 0:
-            for j, ch in enumerate(title):
-                _set(grid, title_row,     tc + j, ch, NEON_MAG_HI)
-            for j, ch in enumerate(subtitle):
-                _set(grid, title_row + 1, sc + j, ch, _dim_color(NEON_RED, 0.75))
+        # ── Advance noise cells — decelerate + transition to sparse chars ────
+        surviving: list[list] = []
+        for entry in self._noise:
+            entry[2] -= 1   # decrement life
+            entry[5] += 1   # increment tick counter
+            if entry[2] > 0:
+                # fade = 1.0 (fresh) → 0.0 (about to die)
+                fade = entry[2] / entry[4]
 
-        # Skip hint at very bottom
-        for j, ch in enumerate(hint):
-            _set(grid, h - 1, hc + j, ch, _dim_color(WALL_MID, 1.5))
+                # Char cycling decelerates as fade decreases
+                if fade > 0.6:
+                    change_every = 1
+                elif fade > 0.3:
+                    change_every = 2
+                else:
+                    change_every = 4
 
-    # ── Frame ─────────────────────────────────────────────────────────────────
+                if entry[5] >= change_every:
+                    entry[5] = 0
+                    # Transition: heavy glitch → medium → sparse as life drains
+                    if fade > 0.5:
+                        entry[3] = random.choice(_GLITCH)
+                    elif fade > 0.2:
+                        entry[3] = random.choice(_GLITCH_MID)
+                    else:
+                        entry[3] = random.choice(_GLITCH_SPARSE)
 
-    def _render_frame(self, w: int, h: int) -> Grid:
-        grid = _make_grid(w, h)
+                surviving.append(entry)
+        self._noise = surviving
 
-        self._draw_rain(grid, h)
+        # ── Check completion ──────────────────────────────────────────────────
+        if not self._art_grid and not self._noise:
+            self._holding = True
 
-        if self._phase in ("alley", "reveal", "hold"):
-            self._draw_alley(grid, w, h, self._alley_p)
+        self._draw(self._w, self._h)
 
-        if self._phase in ("reveal", "hold"):
-            self._draw_figure(grid, w, h)
+    # ── Render ────────────────────────────────────────────────────────────────
 
-        if self._phase == "hold":
-            self._draw_reflection(grid, w, h)
-            self._draw_title(grid, w, h)
+    def _draw(self, w: int, h: int) -> None:
+        glitch_color = _GLITCH_COLORS[self._glitch_t % len(_GLITCH_COLORS)]
 
-        return grid
+        grid: list[list[tuple[str, str]]] = [[(" ", BG)] * w for _ in range(h)]
 
-    # ── Finish ────────────────────────────────────────────────────────────────
+        # Locked art cells
+        for (r, c), (ch, color) in self._locked.items():
+            if 0 <= r < h and 0 <= c < w:
+                grid[r][c] = (ch, color)
+
+        # Noise cells — color dims smoothly per-cell as life drains
+        for entry in self._noise:
+            nr, nc, life, ch, total_life = entry[0], entry[1], entry[2], entry[3], entry[4]
+            if 0 <= nr < h and 0 <= nc < w:
+                fade = max(0.0, life / total_life)
+                noise_base = _GLITCH_COLORS[
+                    (self._glitch_t + nr + nc) % len(_GLITCH_COLORS)
+                ]
+                noise_color = _lerp_color(BG, noise_base, fade)
+                grid[nr][nc] = (ch, noise_color)
+
+        # Materializing art cells (rendered on top of noise)
+        for (r, c), mat in self._art_grid.items():
+            if 0 <= r < h and 0 <= c < w:
+                if mat.delay > 0:
+                    grid[r][c] = (mat.cur_char, glitch_color)
+                else:
+                    p = mat.progress
+                    cell_color = _lerp_color(glitch_color, mat.final_color, p ** 1.5)
+                    grid[r][c] = (mat.cur_char, cell_color)
+
+        # Build Rich Text
+        text = Text(overflow="fold", no_wrap=True)
+        for row in grid:
+            col = 0
+            while col < len(row):
+                ch, color = row[col]
+                start = col
+                while col < len(row) and row[col][1] == color:
+                    col += 1
+                text.append("".join(r[0] for r in row[start:col]), style=color)
+            text.append("\n")
+
+        if self._display:
+            self._display.update(text)
+
+    # ── Lifecycle ─────────────────────────────────────────────────────────────
 
     def _finish(self) -> None:
         if self._timer:
             self._timer.stop()
+        # Clean final render — only locked art on blank background
+        if self._display:
+            w, h = self._w, self._h
+            grid: list[list[tuple[str, str]]] = [[(" ", BG)] * w for _ in range(h)]
+            for (r, c), (ch, color) in self._locked.items():
+                if 0 <= r < h and 0 <= c < w:
+                    grid[r][c] = (ch, color)
+            text = Text(overflow="fold", no_wrap=True)
+            for row in grid:
+                col = 0
+                while col < len(row):
+                    ch, color = row[col]
+                    start = col
+                    while col < len(row) and row[col][1] == color:
+                        col += 1
+                    text.append("".join(r[0] for r in row[start:col]), style=color)
+                text.append("\n")
+            self._display.update(text)
         self.dismiss()
