@@ -21,4 +21,7 @@ class BatmanApp(App[int]):
         yield Static("", id="placeholder")
 
     def on_mount(self) -> None:
-        self.push_screen(BatcaveScreen(no_splash=self._no_splash))
+        self.push_screen(
+            BatcaveScreen(no_splash=self._no_splash),
+            callback=lambda _: self.exit(0),
+        )
