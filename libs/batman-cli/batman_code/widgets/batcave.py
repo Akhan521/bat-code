@@ -2,7 +2,8 @@
 
 Batman ASCII portrait materializes from glitch noise.
 Art cells settle smoothly via per-cell progress tracking.
-Background noise uses lightweight fade-out entries for performance.
+Background noise fades continuously — characters cycle through
+progressively lighter glyphs while color dims to background.
 
 Press any key or pass --no-splash to skip.
 """
@@ -54,9 +55,14 @@ def _lerp_color(c1: str, c2: str, t: float) -> str:
     b = int(b1 + (b2 - b1) * t)
     return f"#{r:02x}{g:02x}{b:02x}"
 
-_GLITCH = list("▓▒░╬╫╪┼╳※▪◆▄▀█@#$%&*!?/\\|+=~^<>{}[]0123456789")
-_GLITCH_MID = list("+=~^*:;!?|/\\<>")   # medium density — transitional
-_GLITCH_SPARSE = list(".:,;'` ")          # sparse — near-invisible before vanishing
+# Glyph tiers — noise cycles through these as it fades
+_GLITCH_HEAVY  = list("▓▒░╬╫╪┼╳※▪◆▄▀█@#$%&")
+_GLITCH_MEDIUM = list("*+=~^:;!?|/\\<>{}[]")
+_GLITCH_LIGHT  = list(".:,;'`-")
+
+def _noise_char() -> str:
+    """Pick a random glitch glyph — full set regardless of fade."""
+    return random.choice(_GLITCH_HEAVY)
 
 # ── Batman ASCII art ──────────────────────────────────────────────────────────
 
@@ -128,30 +134,32 @@ class BatcaveScreen(Screen[None]):
 
     _TICK_S = 0.05  # 20 fps
 
-    # Art cell timing — longer settle for smoother snap, tight finish window
+    # Art cell timing
     _ART_DELAY_MIN  = 18
     _ART_DELAY_MAX  = 28
     _ART_SETTLE_MIN = 38
     _ART_SETTLE_MAX = 50
 
-    # Noise — lightweight background cells
-    _NOISE_FILL     = 0.35   # fraction of screen covered by noise
-    _NOISE_LIFE_MIN = 8      # min ticks before a noise cell fades
-    _NOISE_LIFE_MAX = 35     # max ticks
+    # Noise — must finish well BEFORE art completes
+    # Art earliest finish: delay_min + settle_min = 56 ticks
+    # Noise must be fully gone by ~tick 40
+    _NOISE_FILL     = 0.30
+    _NOISE_LIFE_MIN = 20
+    _NOISE_LIFE_MAX = 40
 
     _HOLD_TICKS = 40
 
     def __init__(self, no_splash: bool = False) -> None:
         super().__init__()
         self._no_splash = no_splash
-        self._art_grid: dict[tuple, _MatCell] = {}  # art cells settling
-        self._locked:   dict[tuple, tuple]    = {}  # (r,c) → (char, color)
-        self._art_keys: set[tuple] = set()          # all art positions (for collision)
-        # Noise: list of [row, col, ticks_remaining, char]
+        self._art_grid: dict[tuple, _MatCell] = {}
+        self._locked:   dict[tuple, tuple]    = {}
+        self._art_keys: set[tuple] = set()
         self._noise: list[list] = []
         self._glitch_t = 0
         self._hold_t   = 0
         self._holding  = False
+        self._done     = False
         self._timer    = None
         self._display: Static | None = None
         self._w = 0
@@ -181,7 +189,6 @@ class BatcaveScreen(Screen[None]):
         off_r  = max(0, (h - art_h) // 2)
         off_c  = max(0, (w - art_w) // 2)
 
-        # Art cells — full settling behavior
         for r, line in enumerate(art):
             for c, ch in enumerate(line):
                 if ch != " ":
@@ -191,18 +198,18 @@ class BatcaveScreen(Screen[None]):
                     self._art_grid[key] = _MatCell(
                         final_ch=ch, final_color=_locked_color(ch),
                         delay=delay, ticks_left=total, total_ticks=total,
-                        cur_char=random.choice(_GLITCH),
+                        cur_char=random.choice(_GLITCH_HEAVY),
                     )
                     self._art_keys.add(key)
 
-        # Noise cells — [row, col, life, char, total_life, tick_counter]
+        # Noise cells — [row, col, life, total_life]
         noise_count = int(w * h * self._NOISE_FILL)
         for _ in range(noise_count):
             nr = random.randint(0, h - 1)
             nc = random.randint(0, w - 1)
             if (nr, nc) not in self._art_keys:
                 life = random.randint(self._NOISE_LIFE_MIN, self._NOISE_LIFE_MAX)
-                self._noise.append([nr, nc, life, random.choice(_GLITCH), life, 0])
+                self._noise.append([nr, nc, life, life])
 
     # ── Tick ──────────────────────────────────────────────────────────────────
 
@@ -221,7 +228,7 @@ class BatcaveScreen(Screen[None]):
         for key, mat in self._art_grid.items():
             if mat.delay > 0:
                 mat.delay -= 1
-                mat.cur_char = random.choice(_GLITCH)
+                mat.cur_char = random.choice(_GLITCH_HEAVY)
                 continue
 
             mat.ticks_left -= 1
@@ -245,7 +252,7 @@ class BatcaveScreen(Screen[None]):
                     if random.random() < p * 0.85:
                         mat.cur_char = mat.final_ch
                     else:
-                        mat.cur_char = random.choice(_GLITCH)
+                        mat.cur_char = random.choice(_GLITCH_HEAVY)
 
             if mat.ticks_left <= 0:
                 newly_locked.append(key)
@@ -254,33 +261,11 @@ class BatcaveScreen(Screen[None]):
             mat = self._art_grid.pop(key)
             self._locked[key] = (mat.final_ch, mat.final_color)
 
-        # ── Advance noise cells — decelerate + transition to sparse chars ────
+        # ── Advance noise cells — continuous cycling with glyph tier transition ─
         surviving: list[list] = []
         for entry in self._noise:
             entry[2] -= 1   # decrement life
-            entry[5] += 1   # increment tick counter
             if entry[2] > 0:
-                # fade = 1.0 (fresh) → 0.0 (about to die)
-                fade = entry[2] / entry[4]
-
-                # Char cycling decelerates as fade decreases
-                if fade > 0.6:
-                    change_every = 1
-                elif fade > 0.3:
-                    change_every = 2
-                else:
-                    change_every = 4
-
-                if entry[5] >= change_every:
-                    entry[5] = 0
-                    # Transition: heavy glitch → medium → sparse as life drains
-                    if fade > 0.5:
-                        entry[3] = random.choice(_GLITCH)
-                    elif fade > 0.2:
-                        entry[3] = random.choice(_GLITCH_MID)
-                    else:
-                        entry[3] = random.choice(_GLITCH_SPARSE)
-
                 surviving.append(entry)
         self._noise = surviving
 
@@ -302,15 +287,20 @@ class BatcaveScreen(Screen[None]):
             if 0 <= r < h and 0 <= c < w:
                 grid[r][c] = (ch, color)
 
-        # Noise cells — color dims smoothly per-cell as life drains
+        # Noise cells — continuous character cycling + smooth color fade
         for entry in self._noise:
-            nr, nc, life, ch, total_life = entry[0], entry[1], entry[2], entry[3], entry[4]
+            nr, nc, life, total_life = entry[0], entry[1], entry[2], entry[3]
             if 0 <= nr < h and 0 <= nc < w:
-                fade = max(0.0, life / total_life)
+                fade = max(0.0, life / total_life)  # 1.0 = fresh, 0.0 = gone
+                # Square-root fade — stays vivid crimson most of its life,
+                # only drops off sharply at the very end
+                fade_vis = fade ** 0.5
                 noise_base = _GLITCH_COLORS[
                     (self._glitch_t + nr + nc) % len(_GLITCH_COLORS)
                 ]
-                noise_color = _lerp_color(BG, noise_base, fade)
+                noise_color = _lerp_color(BG, noise_base, fade_vis)
+                # Pick glyph matching current fade tier (cycles every tick)
+                ch = _noise_char()
                 grid[nr][nc] = (ch, noise_color)
 
         # Materializing art cells (rendered on top of noise)
@@ -340,25 +330,26 @@ class BatcaveScreen(Screen[None]):
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
+    def _blank_screen(self) -> Text:
+        """Build a full-screen blank (spaces on BG) to wipe any residual chars."""
+        w, h = self._w, self._h
+        line = " " * w + "\n"
+        text = Text(overflow="fold", no_wrap=True)
+        for _ in range(h):
+            text.append(line, style=BG)
+        return text
+
     def _finish(self) -> None:
+        if self._done:
+            return
+        self._done = True
         if self._timer:
             self._timer.stop()
-        # Clean final render — only locked art on blank background
+        # Flush all animation state
+        self._art_grid.clear()
+        self._locked.clear()
+        self._noise.clear()
+        # Overwrite display with a full blank screen before dismissing
         if self._display:
-            w, h = self._w, self._h
-            grid: list[list[tuple[str, str]]] = [[(" ", BG)] * w for _ in range(h)]
-            for (r, c), (ch, color) in self._locked.items():
-                if 0 <= r < h and 0 <= c < w:
-                    grid[r][c] = (ch, color)
-            text = Text(overflow="fold", no_wrap=True)
-            for row in grid:
-                col = 0
-                while col < len(row):
-                    ch, color = row[col]
-                    start = col
-                    while col < len(row) and row[col][1] == color:
-                        col += 1
-                    text.append("".join(r[0] for r in row[start:col]), style=color)
-                text.append("\n")
-            self._display.update(text)
+            self._display.update(self._blank_screen())
         self.dismiss()
