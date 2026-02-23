@@ -67,24 +67,31 @@ Python package: `batman_code/`
 
 ### Features (Phase 1)
 
-#### 1. Batman Beyond Loading Screen (`widgets/batcave.py`)
-Inspired by Batman Beyond cyberpunk aesthetic — dark neon-lit alley, rain, silhouette. Skippable with `--no-splash`.
+#### 1. Batcave Loading Screen (`widgets/batcave.py`)
+Batman ASCII portrait materializes from full-screen glitch noise. Skippable with `--no-splash` or any keypress.
 
-**Color palette (overrides main palette for splash only):**
-- Background: `#0a0008` (deep purple-black)
-- Neon red/crimson: `#cc0033` / `#ff0044`
-- Neon pink/magenta: `#ff2d7a` / `#e0007a`
-- Teal accent: `#00aacc`
-- Rain: `#2a2a3a` (dim blue-gray streaks)
-- Figure silhouette: `#111111` (near-black)
-- Bat symbol on chest: `#cc0033` (red)
+**Color palette (splash only):**
+- Background: `#050008` (deep purple-black)
+- Glitch colors: crimson/red spectrum (`#ff0000`, `#cc0000`, `#8b0000`, etc.) with rare white flash
+- Final portrait: character-density shading — deep crimson (`#3d0000`) for sparse chars → vivid red (`#ff1400`) for dense chars
 
-**Five-act animation sequence:**
-- **Act 1 — Rain** (~1s): Screen fades from black; rain streaks (`│`, `'`, `·`) appear column by column, tinted dim blue-gray
-- **Act 2 — Alley** (~1.5s): Perspective depth lines narrow to a vanishing point center; neon signs on sides flicker on with glitch (box-drawn ASCII neon, crimson/magenta)
-- **Act 3 — Silhouette** (~1s): Batman Beyond figure materializes center — slim build, pointy ears, red bat-symbol on chest; emerges from backlit glow
-- **Act 4 — Hold** (~1.5s): Full scene static; rain continues animating, neons flicker; wet floor reflection of figure renders below horizon line
-- **Act 5 — Dismiss**: Auto-transitions or any keypress skips immediately
+**Unified grid materialization — every cell on screen is alive:**
+- On mount, a `_MatCell` is created for **every screen position** (not just art cells)
+- Art cells settle toward their final character and crimson color
+- Non-art cells settle toward `(" ", background)` — they fade to blank
+- The entire screen starts as a wall of glitching characters; the Batman portrait **reveals in-place** as non-art cells fade out and art cells lock in
+- No random scatter overlay — all noise is persistent per-cell state, eliminating flicker
+
+**Per-cell smooth settling:**
+- Each cell tracks `progress` (0→1) over its lifetime (`_GLITCH_MIN` to `_GLITCH_MAX` ticks)
+- Character cycling decelerates: every tick at 0–30% → every 5 ticks at 80–95% → frozen at 95%+
+- Probability of showing final char increases with progress (blended, not binary)
+- Color lerps smoothly from glitch crimson → final color using `progress^1.5` (shift weighted toward end)
+
+**Phases:**
+- **Chaos intro** (`_CHAOS_TICKS`): Brief pure full-screen noise before any cells start settling
+- **Materialization**: Art cells settle into portrait while non-art cells fade to black. Unified, smooth, no competing visual layers
+- **Hold** (`_HOLD_TICKS`): Final portrait displayed for ~2s, then auto-dismiss
 
 #### 2. Five Agent Personas (`prompts/`)
 Selected at launch with `--persona <name>`. Each is a `.md` prompt file defining communication style, signature phrases, and easter eggs:

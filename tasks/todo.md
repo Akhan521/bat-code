@@ -229,102 +229,41 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 6 — Batman Beyond Loading Screen
+## Phase 6 — Batcave Splash Screen
 
-> Inspired by Batman Beyond cyberpunk aesthetic: neon-lit rainy alley, silhouette walking
-> toward viewer, neon signs, wet floor reflection. Replaces the original batcave/bat-swarm concept.
-
-### Color palette (splash-only overrides)
-- Background: `#0a0008` (deep purple-black)
-- Neon crimson: `#cc0033` / `#ff0044`
-- Neon magenta: `#ff2d7a` / `#e0007a`
-- Teal accent: `#00aacc`
-- Rain: `#2a2a3a` (dim blue-gray)
-- Figure: `#111111` (near-black silhouette)
-- Bat symbol on chest: `#cc0033`
-
-### ASCII art assets (define as constants at top of file)
-
-**Batman Beyond silhouette** (~12 rows, slim build, pointy ears, red symbol):
-```
-     /\   /\
-    /  \ /  \
-   /    V    \
-  |   (   )   |
-  |    | |    |
-   \   |•|   /
-    \  | |  /
-     \ |_| /
-      \|_|/
-       | |
-      /   \
-     /     \
-```
-(The `•` char on the chest = bat symbol in `#cc0033`)
-
-**Neon sign (left side, vertical)** — box-drawn ASCII, crimson:
-```
-╔═══╗
-║ B ║
-║ A ║
-║ T ║
-╚═══╝
-```
-
-**Alley perspective lines** — converge to center vanishing point using `\`, `/`, `|`, `░`, `▒`
-
-**Rain characters**: `│`, `╎`, `'`, `.` — randomly distributed, falling each tick
-
-**Wet floor reflection**: mirror of silhouette below a `─` horizon line, rendered at ~30% brightness
-
-### Animation phases
-
-- [ ] Write `batman_code/widgets/batcave.py`
+- [x] Write `batman_code/widgets/batcave.py`
   - Class: `BatcaveScreen(Screen[None])` — full-screen Textual Screen
-  - Tick interval: 0.06s
-  - `--no-splash`: call `self.dismiss()` immediately in `on_mount()`
-  - `on_key()`: call `self._finish()` to cancel timer and dismiss
+  - Skippable: any keypress or `--no-splash` flag dismisses immediately
 
-  - **Phase `rain` (~18 ticks = 1.1s):**
-    - Initialize rain drop list: each drop has `(col, row, char, speed)`
-    - Each tick: advance drops downward, wrap at bottom, spawn new drops at top
-    - Render as full-screen grid; rain chars in `#2a2a3a`, background `#0a0008`
-    - Rain density increases over the phase (more drops spawn per tick)
+- [ ] **Unified grid materialization (current approach):**
+  - On mount, create a `_MatCell` for **every screen position** — the whole screen is one grid
+  - Art cells (Batman portrait) settle toward their final char + crimson color
+  - Non-art cells settle toward `(" ", BG)` — they fade from glitch noise to blank
+  - No random scatter overlay — all noise is persistent per-cell state (no flicker)
+  - Portrait **reveals in-place** as surrounding noise fades and art cells lock in
 
-  - **Phase `alley` (~25 ticks = 1.5s):**
-    - Rain continues in background
-    - Alley perspective lines fade in from edges toward center vanishing point
-    - Left wall: `\` chars descending left-to-right
-    - Right wall: `/` chars descending right-to-left
-    - Floor: `─` chars converging to center
-    - Neon sign on left side flickers in: alternate between full bright (`#ff2d7a`) and dim (`#660022`) every 2–3 ticks to simulate neon flicker
-    - Optional: small teal accent neon on right side (`#00aacc`)
-    - Colors fade in gradually using linear interpolation on hex components
+- [ ] **Per-cell smooth settling system:**
+  - `_MatCell` dataclass tracks: `final_ch`, `final_color`, `ticks_left`, `total_ticks`, `char_tick`, `cur_char`
+  - `progress` property: `1.0 - (ticks_left / total_ticks)` → 0.0 to 1.0
+  - Character cycling decelerates: every tick (0–30%) → every 2 ticks (30–60%) → every 3 (60–80%) → every 5 (80–95%) → frozen (95%+)
+  - Probability of showing final char blends up with progress (`random() < p * 0.85`)
+  - Color lerps from cycling glitch crimson → final color via `progress^1.5`
 
-  - **Phase `reveal` (~16 ticks = 1.0s):**
-    - Rain + alley remain
-    - Batman Beyond silhouette materializes center screen, top-down (rows appear one by one)
-    - Behind figure: radial glow — center columns shift from `#0a0008` → `#660022` → `#cc0033`
-    - Bat symbol row (`•`) renders in `#cc0033`, pulses (alternates `#cc0033` ↔ `#ff0044`)
-    - Figure rows appear with slight glitch: random chars first, then stabilize
+- [ ] **Phases:**
+  - Chaos intro (`_CHAOS_TICKS`): brief full-screen noise, no cells settling yet
+  - Materialization: art cells lock in, non-art cells fade to background
+  - Hold (`_HOLD_TICKS`): final portrait for ~2s, then auto-dismiss
 
-  - **Phase `hold` (~25 ticks = 1.5s):**
-    - Full scene: rain animating, neons flickering, static figure
-    - Wet floor reflection: render silhouette mirrored below horizon `─` line at 30% brightness
-      - Reflection color: multiply each channel by 0.3, add slight blue tint
-    - "BATMAN BEYOND" title appears above figure in `#ff2d7a` with neon-glow style (bright center, dim edges)
-    - "INITIALIZING..." subtitle fades in below in `#cc0033`
-    - After hold ticks complete: call `self._finish()`
+- [ ] **Batman ASCII portrait (`BATMAN_ART`):**
+  - Character-density shading: `@#8%&$` (dark/shadow) → `.:;,'` (light/highlight)
+  - Pointed bat ears, angular cowl, eye slits, jaw/chin, chest bat symbol, cape shoulders
+  - Reference: Dark Knight character-art style portrait
 
-  - **Helper: `_render_frame(w, h) -> Text`**
-    - Compose full grid each tick: background → alley → rain → figure → reflection → UI text
-    - Use Rich `Text` with per-span color styling
-
-  - **Helper: `_lerp_color(c1, c2, t) -> str`**
-    - Linear interpolate between two hex colors at t∈[0,1], return hex string
-
-  - **Helper: `_glitch_str(s, intensity) -> str`**
-    - Replace random non-space chars with chars from `"▓▒░╬╫╪┼╳※▪◆◇▄▀█"`
+- [ ] **Color system:**
+  - Background: `#050008`
+  - Glitch palette: crimson/red spectrum + rare white flash
+  - Final locked colors: `_locked_color(ch)` maps char brightness → deep crimson to vivid red
+  - Non-art cells: fade toward `#050008` (background)
 
 ---
 
