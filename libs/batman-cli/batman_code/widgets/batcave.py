@@ -42,23 +42,119 @@ def _lerp_color(c1: str, c2: str, t: float) -> str:
 # Glyph set for glitch noise within letters
 _GLITCH_HEAVY = list("▓▒░╬╫╪┼╳※▪◆▄▀█@#$%&")
 
-# ── "BAT CODE" block-letter ASCII art ────────────────────────────────────────
+# ── "BAT CODE" block-letter font (9 rows, box-drawing + █ for 3D depth) ─────
 
-BAT_CODE_ASCII = [
-    "██████╗   █████╗ ████████╗     ██████╗  ██████╗ ██████╗ ███████╗",
-    "██╔══██╗ ██╔══██╗╚══██╔══╝    ██╔════╝ ██╔═══██╗██╔══██╗██╔════╝",
-    "██████╔╝ ███████║   ██║       ██║      ██║   ██║██║  ██║█████╗  ",
-    "██╔══██╗ ██╔══██║   ██║       ██║      ██║   ██║██║  ██║██╔══╝  ",
-    "██████╔╝ ██║  ██║   ██║       ╚██████╗ ╚██████╔╝██████╔╝███████╗",
-    "╚═════╝  ╚═╝  ╚═╝   ╚═╝        ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝",
-]
+_LETTERS: dict[str, list[str]] = {
+    "B": [
+        "████████╗ ",
+        "██╔═════██╗",
+        "██║     ██║",
+        "██║     ██║",
+        "████████╔╝",
+        "██╔═════██╗",
+        "██║     ██║",
+        "██║     ██║",
+        "████████╔╝",
+        "╚═══════╝ ",
+    ],
+    "A": [
+        "  ██████╗  ",
+        " ██╔════██╗",
+        "██╔╝    ╚██╗",
+        "██║      ██║",
+        "██████████║",
+        "██╔══════██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "╚═╝      ╚═╝",
+    ],
+    "T": [
+        "████████████╗",
+        "╚════██╔════╝",
+        "     ██║     ",
+        "     ██║     ",
+        "     ██║     ",
+        "     ██║     ",
+        "     ██║     ",
+        "     ██║     ",
+        "     ██║     ",
+        "     ╚═╝     ",
+    ],
+    "C": [
+        " ████████╗ ",
+        "██╔═══════╝",
+        "██║        ",
+        "██║        ",
+        "██║        ",
+        "██║        ",
+        "██║        ",
+        "██║        ",
+        "╚████████╗ ",
+        " ╚════════╝",
+    ],
+    "O": [
+        " ████████╗ ",
+        "██╔══════██╗",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "╚████████╔╝",
+        " ╚════════╝",
+    ],
+    "D": [
+        "████████╗  ",
+        "██╔═════██╗",
+        "██║     ╚██╗",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║     ╔██╝",
+        "████████╔╝ ",
+        "╚═══════╝  ",
+    ],
+    "E": [
+        "████████████╗",
+        "██╔═════════╝",
+        "██║          ",
+        "██║          ",
+        "████████╗    ",
+        "██╔═════╝    ",
+        "██║          ",
+        "██║          ",
+        "████████████╗",
+        "╚═══════════╝",
+    ],
+}
 
-# ── Batman portrait (kept for future Phase 2 multi-phase splash) ─────────────
-# BATMAN_ART = [
-#     r"                      .                .                      ",
-#     r"                     .:.              .:.                     ",
-#     ... (portrait data preserved in git history)
-# ]
+_FONT_HEIGHT = 10
+_LETTER_GAP = 2
+_WORD_GAP = 5
+
+
+def _compose_text(text: str) -> list[str]:
+    """Compose block-letter words from the _LETTERS font."""
+    words = text.split()
+    # Pad all letters to consistent width within each letter
+    for letter_rows in _LETTERS.values():
+        max_w = max(len(row) for row in letter_rows)
+        for i, row in enumerate(letter_rows):
+            letter_rows[i] = row.ljust(max_w)
+    word_blocks: list[list[str]] = []
+    for word in words:
+        letters = [_LETTERS[ch] for ch in word]
+        spacer = " " * _LETTER_GAP
+        block = [spacer.join(L[row] for L in letters) for row in range(_FONT_HEIGHT)]
+        word_blocks.append(block)
+    spacer = " " * _WORD_GAP
+    return [spacer.join(wb[row] for wb in word_blocks) for row in range(_FONT_HEIGHT)]
+
+
+BAT_CODE_ASCII = _compose_text("BAT CODE")
 
 # ── Art cell — rich settling state ────────────────────────────────────────────
 
