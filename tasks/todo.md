@@ -229,41 +229,46 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 6 — Batcave Splash Screen
+## Phase 6 — Batcave Splash Screen (Multi-Phase)
+
+### Phase 6a — "BAT CODE" Block-Letter Glitch Animation (current)
 
 - [x] Write `batman_code/widgets/batcave.py`
   - Class: `BatcaveScreen(Screen[None])` — full-screen Textual Screen
-  - Skippable: any keypress or `--no-splash` flag dismisses immediately
+  - Skippable: any keypress skips to settled state; second keypress dismisses
+  - `--no-splash` flag dismisses immediately
 
-- [ ] **Unified grid materialization (current approach):**
-  - On mount, create a `_MatCell` for **every screen position** — the whole screen is one grid
-  - Art cells (Batman portrait) settle toward their final char + crimson color
-  - Non-art cells settle toward `(" ", BG)` — they fade from glitch noise to blank
-  - No random scatter overlay — all noise is persistent per-cell state (no flicker)
-  - Portrait **reveals in-place** as surrounding noise fades and art cells lock in
+- [x] **"BAT CODE" block-letter text:**
+  - `BAT_CODE_ASCII` — 6-row-tall block letters using `█╔═╗║╚╝` characters
+  - ~65 chars wide, centered horizontally and vertically on screen
+  - Only letter cells glitch — rest of screen stays black/empty
 
-- [ ] **Per-cell smooth settling system:**
+- [x] **Per-cell smooth settling system:**
   - `_MatCell` dataclass tracks: `final_ch`, `final_color`, `ticks_left`, `total_ticks`, `char_tick`, `cur_char`
   - `progress` property: `1.0 - (ticks_left / total_ticks)` → 0.0 to 1.0
   - Character cycling decelerates: every tick (0–30%) → every 2 ticks (30–60%) → every 3 (60–80%) → every 5 (80–95%) → frozen (95%+)
   - Probability of showing final char blends up with progress (`random() < p * 0.85`)
-  - Color lerps from cycling glitch crimson → final color via `progress^1.5`
+  - Color lerps from dark-blue glitch → bat-gold via `progress^1.5`
 
-- [ ] **Phases:**
-  - Chaos intro (`_CHAOS_TICKS`): brief full-screen noise, no cells settling yet
-  - Materialization: art cells lock in, non-art cells fade to background
-  - Hold (`_HOLD_TICKS`): final portrait for ~2s, then auto-dismiss
+- [x] **Animation phases:**
+  - Chaos (~0.3–1.2s): Letter shapes filled with random glitch chars in dark blue/violet
+  - Settle (~1.2–2.1s): Cells decelerate, blue→gold color lerp, letters emerge
+  - Hold (~1.5s): Clean gold "BAT CODE" on black background
+  - Prompt: "Press any key to enter the Batcave..." appears below, then auto-dismiss
 
-- [ ] **Batman ASCII portrait (`BATMAN_ART`):**
-  - Character-density shading: `@#8%&$` (dark/shadow) → `.:;,'` (light/highlight)
-  - Pointed bat ears, angular cowl, eye slits, jaw/chin, chest bat symbol, cape shoulders
-  - Reference: Dark Knight character-art style portrait
+- [x] **Color palette:**
+  - Background: `#0a0a0f` (Gotham night)
+  - Glitch colors: dark blues/violets (`#1a3a5c`, `#0d2440`, `#2d2d4e`)
+  - Final letter color: bat-gold (`#f5c518`)
+  - Prompt text: dimmer gold (`#c49e14`)
 
-- [ ] **Color system:**
-  - Background: `#050008`
-  - Glitch palette: crimson/red spectrum + rare white flash
-  - Final locked colors: `_locked_color(ch)` maps char brightness → deep crimson to vivid red
-  - Non-art cells: fade toward `#050008` (background)
+### Phase 6b — Batman Portrait Animation (future)
+
+- [ ] Add Batman ASCII portrait as Phase 2 of multi-phase splash
+  - Portrait materializes after "BAT CODE" text dismisses
+  - Reuse `_MatCell` architecture with crimson color palette
+  - Character-density shading for portrait detail
+  - Design TBD — may keep or skip based on Phase 6a results
 
 ---
 
