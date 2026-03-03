@@ -7,20 +7,20 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ## Phase 0 — Scaffold Package
 
-- [ ] Create `libs/batman-cli/` directory
-- [ ] Write `libs/batman-cli/pyproject.toml`
+- [x] Create `libs/batman-cli/` directory
+- [x] Write `libs/batman-cli/pyproject.toml`
   - Build system: hatchling
   - Package name: `batman-cli`
   - Entry point: `bat-code = "batman_code:cli_main"`
   - Dependencies: mirror `libs/cli/pyproject.toml` (textual, langchain, etc.)
   - `[tool.uv.sources]` deepagents pointing to `../deepagents` editable
   - Optional extras: all model providers (anthropic, openai, etc.)
-- [ ] Create `libs/batman-cli/batman_code/` package directory
-- [ ] Write `batman_code/__init__.py` — export `__version__`, `cli_main`
-- [ ] Write `batman_code/__main__.py` — `python -m batman_code` support
-- [ ] Write `batman_code/_version.py` — version `0.1.0`
-- [ ] Run `uv sync` in `libs/batman-cli/` to verify scaffold installs cleanly
-- [ ] Verify `bat-code --help` runs without error
+- [x] Create `libs/batman-cli/batman_code/` package directory
+- [x] Write `batman_code/__init__.py` — export `__version__`, `cli_main`
+- [x] Write `batman_code/__main__.py` — `python -m batman_code` support
+- [x] Write `batman_code/_version.py` — version `0.1.0`
+- [x] Run `uv sync` in `libs/batman-cli/` to verify scaffold installs cleanly
+- [x] Verify `bat-code --help` runs without error
 
 ---
 
@@ -264,13 +264,38 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
     - Box-drawing edges (`║═╔╗╚╝`): flat bat-gold (`#f5c518`)
   - Prompt text: dimmer gold (`#c49e14`)
 
-### Phase 6b — Batman Portrait Animation (future)
+### Phase 6b — Batman Portrait Fade-from-Darkness Animation
 
-- [ ] Add Batman ASCII portrait as Phase 2 of multi-phase splash
-  - Portrait materializes after "BAT CODE" text dismisses
-  - Reuse `_MatCell` architecture with crimson color palette
-  - Character-density shading for portrait detail
-  - Design TBD — may keep or skip based on Phase 6a results
+- [ ] Create `BATMAN_PORTRAIT: list[str]` ASCII art constant (~50 rows x ~70-80 cols)
+  - Character-density shading: ` ` → `.` → `:` → `;` → `=` → `+` → `*` → `#` → `@` → `█`
+  - Sharp angular cowl ears, dark eye slits, nose bridge, jawline, chin
+  - Broad shoulders, cape spreading outward
+  - "Bat-Code" text across chest region (in place of bat-symbol)
+
+- [ ] Create `GOTHAM_SKYLINE: list[str]` building silhouettes (~10-12 rows, full width)
+  - Simple blocky buildings with antenna spires, occasional window dots
+  - Very dim grey/blue coloring, stays behind portrait
+
+- [ ] Implement color mapping system
+  - `_CHAR_DENSITY: dict[str, float]` — char → 0.0–1.0 density
+  - `_crimson_for_density(density)` — dense → vivid red `#ff1400`, sparse → deep crimson `#2a0000`
+  - `_CHEST_TEXT_POSITIONS: set` — cells rendered in bat-gold `#f5c518`
+  - Skyline colors: very dark grey/blue (`#0d0d1a` to `#1a1a2a`)
+
+- [ ] Write `BatmanPortraitScreen(Screen[None])` class
+  - Fade-from-darkness animation: global brightness ramp 0→1
+  - Density-weighted: `eff_b = min(1.0, brightness * (0.5 + density * 0.5))`
+  - Dense/bright areas appear first, sparse/dark emerge later
+  - Skyline fades at 60% of portrait brightness
+  - Timing: 0.05s tick (20fps), ~4s fade, ~2s hold
+  - Two-stage keypress: skip to settled → dismiss
+  - Blank screen wipe on dismiss (same pattern as BatcaveScreen)
+
+- [ ] Wire up in `app.py` for development testing
+  - Temporarily push `BatmanPortraitScreen` instead of `BatcaveScreen`
+  - Later: chain block letters → portrait → dismiss
+
+- [ ] Iterate on portrait quality and animation tuning
 
 ---
 
