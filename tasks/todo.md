@@ -259,7 +259,9 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 - [x] **Color palette:**
   - Background: `#0a0a0f` (Gotham night)
   - Glitch colors: dark blues/violets (`#1a3a5c`, `#0d2440`, `#2d2d4e`)
-  - Final letter color: bat-gold (`#f5c518`)
+  - Final letter color: multi-shade bat-gold with top-lit gradient
+    - `█` solid faces: smooth gradient `#ffe566` (top) → `#9a7508` (bottom), `** 1.4` perceptual curve
+    - Box-drawing edges (`║═╔╗╚╝`): flat bat-gold (`#f5c518`)
   - Prompt text: dimmer gold (`#c49e14`)
 
 ### Phase 6b — Batman Portrait Animation (future)

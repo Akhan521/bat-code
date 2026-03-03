@@ -68,30 +68,31 @@ Python package: `batman_code/`
 ### Features (Phase 1)
 
 #### 1. Batcave Loading Screen (`widgets/batcave.py`)
-Batman ASCII portrait materializes from full-screen glitch noise. Skippable with `--no-splash` or any keypress.
+"BAT CODE" block-letter text materializes from glitch noise. Skippable with `--no-splash` or any keypress (two-stage: first press skips to settled, second dismisses).
 
 **Color palette (splash only):**
-- Background: `#050008` (deep purple-black)
-- Glitch colors: crimson/red spectrum (`#ff0000`, `#cc0000`, `#8b0000`, etc.) with rare white flash
-- Final portrait: character-density shading — deep crimson (`#3d0000`) for sparse chars → vivid red (`#ff1400`) for dense chars
+- Background: `#0a0a0f` (Gotham night)
+- Glitch colors: dark blues/violets (`#1a3a5c`, `#0d2440`, `#2d2d4e`, etc.)
+- Final letter color: multi-shade bat-gold with top-lit gradient
+  - `█` solid faces: smooth gradient from bright highlight (`#ffe566`) at top to darker amber (`#9a7508`) at bottom, computed via `_lerp_color` with a `** 1.4` perceptual curve
+  - Box-drawing edges (`║═╔╗╚╝`): flat bat-gold (`#f5c518`)
+- Prompt text: dimmer gold (`#c49e14`)
 
-**Unified grid materialization — every cell on screen is alive:**
-- On mount, a `_MatCell` is created for **every screen position** (not just art cells)
-- Art cells settle toward their final character and crimson color
-- Non-art cells settle toward `(" ", background)` — they fade to blank
-- The entire screen starts as a wall of glitching characters; the Batman portrait **reveals in-place** as non-art cells fade out and art cells lock in
-- No random scatter overlay — all noise is persistent per-cell state, eliminating flicker
+**Block-letter art:**
+- 10-row-tall letters using `█╔═╗║╚╝` chars for 3D depth, centered on screen
+- Only letter cells animate — rest of screen stays black
 
 **Per-cell smooth settling:**
-- Each cell tracks `progress` (0→1) over its lifetime (`_GLITCH_MIN` to `_GLITCH_MAX` ticks)
-- Character cycling decelerates: every tick at 0–30% → every 5 ticks at 80–95% → frozen at 95%+
+- Each cell tracks `progress` (0→1) over its lifetime
+- Character cycling decelerates: every tick at 0–30% → every 2–5 ticks at higher progress → frozen at 95%+
 - Probability of showing final char increases with progress (blended, not binary)
-- Color lerps smoothly from glitch crimson → final color using `progress^1.5` (shift weighted toward end)
+- Color lerps smoothly from glitch blue → final gold using `progress^1.5`
 
 **Phases:**
-- **Chaos intro** (`_CHAOS_TICKS`): Brief pure full-screen noise before any cells start settling
-- **Materialization**: Art cells settle into portrait while non-art cells fade to black. Unified, smooth, no competing visual layers
-- **Hold** (`_HOLD_TICKS`): Final portrait displayed for ~2s, then auto-dismiss
+- **Chaos** (~0.3–1.2s): Letter shapes filled with random glitch chars in dark blue/violet
+- **Settle** (~1.2–2.1s): Cells decelerate, blue→gold color lerp, letters emerge
+- **Hold** (~1.5s): Final gold "BAT CODE" displayed, then prompt appears
+- **Dismiss**: Auto-dismiss after hold, or keypress
 
 #### 2. Five Agent Personas (`prompts/`)
 Selected at launch with `--persona <name>`. Each is a `.md` prompt file defining communication style, signature phrases, and easter eggs:

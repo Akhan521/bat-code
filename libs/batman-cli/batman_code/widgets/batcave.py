@@ -3,7 +3,9 @@
 "BAT CODE" block-letter text materializes from glitch noise.
 Only cells within the letter shapes glitch — the rest of the
 screen stays black.  Letters settle from dark-blue noise into
-bright bat-gold.
+multi-shade bat-gold with a top-lit gradient: bright highlight
+at the top of each letter fading to a darker amber shadow at
+the bottom (█ faces only — box-drawing edges stay flat gold).
 
 Press any key or pass --no-splash to skip.
 """
@@ -18,18 +20,7 @@ from textual.app import ComposeResult
 from textual.screen import Screen
 from textual.widgets import Static
 
-# ── Palette ───────────────────────────────────────────────────────────────────
-
-BG = "#0a0a0f"
-_FINAL_GOLD = "#f5c518"
-_PROMPT_COLOR = "#c49e14"
-
-_GLITCH_COLORS = [
-    "#1a3a5c", "#0d2440", "#1a3a5c",
-    "#2d2d4e", "#1a1a3a", "#0d2440",
-    "#3a4a6c", "#1a3a5c", "#0d2440",
-    "#4a5a7c", "#1a3a5c", "#2d2d4e",
-]
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _lerp_color(c1: str, c2: str, t: float) -> str:
     r1, g1, b1 = int(c1[1:3], 16), int(c1[3:5], 16), int(c1[5:7], 16)
@@ -38,6 +29,36 @@ def _lerp_color(c1: str, c2: str, t: float) -> str:
     g = int(g1 + (g2 - g1) * t)
     b = int(b1 + (b2 - b1) * t)
     return f"#{r:02x}{g:02x}{b:02x}"
+
+# ── Palette ───────────────────────────────────────────────────────────────────
+
+BG = "#0a0a0f"
+_PROMPT_COLOR = "#c49e14"
+
+# Flat gold for box-drawing characters (edges/corners)
+_GOLD_EDGE = "#f5c518"
+
+# Top-lit gradient for █ solid faces — narrow range, smooth perceptual curve
+_FACE_TOP    = "#ffe566"   # bright highlight
+_FACE_BOTTOM = "#9a7508"   # darker shadow bottom
+_FACE_SHADES = [
+    _lerp_color(_FACE_TOP, _FACE_BOTTOM, (i / 9) ** 1.4) for i in range(10)
+]
+
+
+def _gold_for_cell(ch: str, art_row: int) -> str:
+    """Return gold shade: smooth row gradient for █, flat for edges."""
+    if ch == "█":
+        idx = max(0, min(art_row, len(_FACE_SHADES) - 1))
+        return _FACE_SHADES[idx]
+    return _GOLD_EDGE
+
+_GLITCH_COLORS = [
+    "#1a3a5c", "#0d2440", "#1a3a5c",
+    "#2d2d4e", "#1a1a3a", "#0d2440",
+    "#3a4a6c", "#1a3a5c", "#0d2440",
+    "#4a5a7c", "#1a3a5c", "#2d2d4e",
+]
 
 # Glyph set for glitch noise within letters
 _GLITCH_HEAVY = list("▓▒░╬╫╪┼╳※▪◆▄▀█@#$%&")
@@ -257,7 +278,7 @@ class BatcaveScreen(Screen[None]):
                     total = random.randint(self._ART_SETTLE_MIN, self._ART_SETTLE_MAX)
                     delay = random.randint(self._ART_DELAY_MIN, self._ART_DELAY_MAX)
                     self._art_grid[key] = _MatCell(
-                        final_ch=ch, final_color=_FINAL_GOLD,
+                        final_ch=ch, final_color=_gold_for_cell(ch, r),
                         delay=delay, ticks_left=total, total_ticks=total,
                         cur_char=random.choice(_GLITCH_HEAVY),
                     )
