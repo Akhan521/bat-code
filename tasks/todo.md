@@ -264,30 +264,25 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
     - Box-drawing edges (`║═╔╗╚╝`): flat bat-gold (`#f5c518`)
   - Prompt text: dimmer gold (`#c49e14`)
 
-### Phase 6b — Gotham Skyline Splash Screen
+### Phase 6b — Batarang Backdrop Behind BAT CODE Text
 
-- [ ] Create `GOTHAM_SKYLINE: list[str]` ASCII art (user will provide reference image)
-  - Detailed Gotham cityscape silhouettes — buildings, spires, antennas, water towers
-  - Character-density shading for depth and atmosphere
-  - Full-width, vertically centered on screen
+- [ ] Add `BATARANG_ART: list[str]` to `batcave.py`
+  - Large angular batarang shape (~80+ cols wide, ~15-20 rows tall)
+  - Built from `█▄▀▌▐` block chars for smooth edges
+  - Centered behind the BAT CODE text
 
-- [ ] Implement color mapping + animation system
-  - Skyline colors: dark blues/greys with atmospheric depth
-  - Fade-from-darkness animation: global brightness ramp 0→1
-  - Timing: 0.05s tick (20fps), ~4s fade, ~2s hold
-  - Two-stage keypress: skip to settled → dismiss
+- [ ] Add batarang fade animation to `BatcaveScreen`
+  - Two-phase: block letters glitch→settle first (existing), then batarang fades in behind
+  - Smooth brightness ramp 0→1 over ~2-3s during hold phase
+  - Color: dark Gotham blue `#1a3a5c`
+  - Text cells always render on top (batarang only shows where no text exists)
+  - Extend hold phase to wait for batarang fade + short pause before prompt
 
-- [ ] Write `GothamSkylineScreen(Screen[None])` class in `widgets/skyline.py`
-  - Same lifecycle as BatcaveScreen (compose → mount → timer → tick → draw → dismiss)
-  - Blank screen wipe on dismiss
+- [ ] Modify `_skip_to_settled()` to also set batarang to full brightness
 
-- [ ] Wire up in `app.py` for development testing
-  - Temporarily push `GothamSkylineScreen` instead of `BatcaveScreen`
-  - Later: chain block letters → skyline → dismiss
+- [ ] Iterate on batarang art shape, fade timing, colors with user feedback
 
-- [ ] Iterate on skyline quality and animation with user feedback
-
-> **Note:** Batman portrait (original 6b plan) deferred — may revisit later.
+> **Note:** Portrait and skyline plans scrapped — TUI works best with geometric shapes.
 
 ---
 
