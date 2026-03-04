@@ -7,11 +7,15 @@ multi-shade bat-gold with a top-lit gradient: bright highlight
 at the top of each letter fading to a darker amber shadow at
 the bottom (█ faces only — box-drawing edges stay flat gold).
 
+After text settles, a large batarang silhouette slowly fades
+in behind the letters in dark Gotham blue.
+
 Press any key or pass --no-splash to skip.
 """
 
 from __future__ import annotations
 
+import math
 import random
 from dataclasses import dataclass
 
@@ -58,6 +62,52 @@ _GLITCH_COLORS = [
     "#2d2d4e", "#1a1a3a", "#0d2440",
     "#3a4a6c", "#1a3a5c", "#0d2440",
     "#4a5a7c", "#1a3a5c", "#2d2d4e",
+]
+
+# Batarang backdrop — dark Gotham blue, fades in behind settled text
+_BATARANG_COLOR = "#1a3a5c"
+
+# Bat-symbol: 30 rows x 140 cols (generated from batarang_arkhan.png reference)
+# Classic Arkham Batman logo: pointed ears, concave dip, wide swept wings,
+# scalloped bottom meeting at a center tail point.
+_BAT_W = 140
+# fmt: off
+_RAW_BAT: list[str] = [
+    "                                █████                                                                  █████                                ",
+    "                            ████████                                                                    ████████                            ",
+    "                        ██████████                                                                        ██████████                        ",
+    "                    ██████████████                                                                        ██████████████                    ",
+    "                 ████████████████                               █          ██                              ████████████████                 ",
+    "               ███████████████████                             ███        ███                             ███████████████████               ",
+    "            ███████████████████████                            ████      ████                            ███████████████████████            ",
+    "          ███████████████████████████                         ████████████████                         ███████████████████████████          ",
+    "        █████████████████████████████████                     ████████████████                     █████████████████████████████████        ",
+    "       █████████████████████████████████████████             ██████████████████             █████████████████████████████████████████       ",
+    "     ██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████     ",
+    "    ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████    ",
+    "   ██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████   ",
+    "  ████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████  ",
+    " ██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████ ",
+    " ██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████ ",
+    "██                        ████████████████████████████████████████████████████████████████████████████████████████                        ██",
+    "                             ██████████████████████████████████████████████████████████████████████████████████                             ",
+    "                               ██████████████████████████████████████████████████████████████████████████████                               ",
+    "                                ████████████████████████████████████████████████████████████████████████████                                ",
+    "                                 ██████████████████████████████████████████████████████████████████████████                                 ",
+    "                                  ████                ████████████████████████████████                ████                                  ",
+    "                                                          ████████████████████████                                                          ",
+    "                                                            ████████████████████                                                            ",
+    "                                                              ████████████████                                                              ",
+    "                                                                ████████████                                                                ",
+    "                                                                  ████████                                                                  ",
+    "                                                                   ██████                                                                   ",
+    "                                                                    ████                                                                    ",
+    "                                                                     ██                                                                     ",
+]
+# fmt: on
+BATARANG_ART: list[str] = [
+    r + " " * max(0, _BAT_W - len(r)) if len(r) < _BAT_W else r[:_BAT_W]
+    for r in _RAW_BAT
 ]
 
 # Glyph set for glitch noise within letters
@@ -220,7 +270,10 @@ class BatcaveScreen(Screen[None]):
     _ART_SETTLE_MIN = 20
     _ART_SETTLE_MAX = 35
 
-    _HOLD_TICKS = 25  # ~1.5s hold before auto-dismiss
+    _HOLD_TICKS = 25  # ~1.5s hold after batarang fade before auto-dismiss
+
+    # Batarang fade: ~2.4s at 0.06s/tick = ~40 ticks
+    _BATARANG_FADE_RATE = 0.025  # per tick, 40 ticks to 1.0
 
     def __init__(self, no_splash: bool = False) -> None:
         super().__init__()
@@ -238,6 +291,10 @@ class BatcaveScreen(Screen[None]):
         self._h = 0
         self._art_off_r = 0
         self._art_h = 0
+        # Batarang backdrop state
+        self._batarang_grid: dict[tuple, str] = {}  # (r, c) → char
+        self._batarang_fade: float = 0.0             # 0→1 brightness
+        self._batarang_done: bool = False             # fade complete
 
     def compose(self) -> ComposeResult:
         self._display = Static("", id="bb-display")
@@ -284,6 +341,21 @@ class BatcaveScreen(Screen[None]):
                     )
                     self._art_keys.add(key)
 
+        # Build batarang backdrop — centered on same midpoint as text
+        bat_art = BATARANG_ART
+        bat_h   = len(bat_art)
+        bat_w   = max(len(line) for line in bat_art)
+        text_mid_r = off_r + art_h // 2
+        text_mid_c = off_c + art_w // 2
+        bat_off_r  = text_mid_r - bat_h // 2
+        bat_off_c  = text_mid_c - bat_w // 2
+
+        for r, line in enumerate(bat_art):
+            for c, ch in enumerate(line):
+                if ch != " ":
+                    key = (r + bat_off_r, c + bat_off_c)
+                    self._batarang_grid[key] = ch
+
     # ── Tick ──────────────────────────────────────────────────────────────────
 
     def _tick(self) -> None:
@@ -293,9 +365,19 @@ class BatcaveScreen(Screen[None]):
         self._glitch_t += 1
 
         if self._holding:
-            self._hold_t += 1
-            if self._hold_t >= self._HOLD_TICKS:
-                self._finish()
+            # Advance batarang fade
+            if not self._batarang_done:
+                self._batarang_fade = min(1.0, self._batarang_fade + self._BATARANG_FADE_RATE)
+                if self._batarang_fade >= 1.0:
+                    self._batarang_done = True
+                self._draw(self._w, self._h)
+            else:
+                # Hold after batarang is fully visible
+                self._hold_t += 1
+                if self._hold_t >= self._HOLD_TICKS:
+                    self._finish()
+                    return
+                self._draw(self._w, self._h)
             return
 
         # ── Advance art cells ────────────────────────────────────────────────
@@ -350,12 +432,19 @@ class BatcaveScreen(Screen[None]):
 
         grid: list[list[tuple[str, str]]] = [[(" ", BG)] * w for _ in range(h)]
 
-        # Locked art cells
+        # Batarang backdrop — render first (behind everything)
+        if self._batarang_fade > 0:
+            bat_color = _lerp_color(BG, _BATARANG_COLOR, self._batarang_fade)
+            for (r, c), ch in self._batarang_grid.items():
+                if 0 <= r < h and 0 <= c < w:
+                    grid[r][c] = (ch, bat_color)
+
+        # Locked art cells (on top of batarang)
         for (r, c), (ch, color) in self._locked.items():
             if 0 <= r < h and 0 <= c < w:
                 grid[r][c] = (ch, color)
 
-        # Materializing art cells
+        # Materializing art cells (on top of batarang)
         for (r, c), mat in self._art_grid.items():
             if 0 <= r < h and 0 <= c < w:
                 if mat.delay > 0:
@@ -365,8 +454,8 @@ class BatcaveScreen(Screen[None]):
                     cell_color = _lerp_color(glitch_color, mat.final_color, p ** 1.5)
                     grid[r][c] = (mat.cur_char, cell_color)
 
-        # Prompt text during hold phase
-        if self._holding:
+        # Prompt text during hold phase (after batarang is fully faded in)
+        if self._holding and self._batarang_done:
             prompt = "Press any key to enter the Batcave..."
             prompt_r = self._art_off_r + self._art_h + 3
             prompt_c = max(0, (w - len(prompt)) // 2)
@@ -393,11 +482,13 @@ class BatcaveScreen(Screen[None]):
     # ── Skip to settled ───────────────────────────────────────────────────────
 
     def _skip_to_settled(self) -> None:
-        """Instantly lock all art cells and enter hold phase."""
+        """Instantly lock all art cells + batarang, enter hold phase."""
         for key, mat in self._art_grid.items():
             self._locked[key] = (mat.final_ch, mat.final_color)
         self._art_grid.clear()
         self._holding = True
+        self._batarang_fade = 1.0
+        self._batarang_done = True
         self._draw(self._w, self._h)
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
