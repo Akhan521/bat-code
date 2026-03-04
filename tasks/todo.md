@@ -264,38 +264,30 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
     - Box-drawing edges (`║═╔╗╚╝`): flat bat-gold (`#f5c518`)
   - Prompt text: dimmer gold (`#c49e14`)
 
-### Phase 6b — Batman Portrait Fade-from-Darkness Animation
+### Phase 6b — Gotham Skyline Splash Screen
 
-- [ ] Create `BATMAN_PORTRAIT: list[str]` ASCII art constant (~50 rows x ~70-80 cols)
-  - Character-density shading: ` ` → `.` → `:` → `;` → `=` → `+` → `*` → `#` → `@` → `█`
-  - Sharp angular cowl ears, dark eye slits, nose bridge, jawline, chin
-  - Broad shoulders, cape spreading outward
-  - "Bat-Code" text across chest region (in place of bat-symbol)
+- [ ] Create `GOTHAM_SKYLINE: list[str]` ASCII art (user will provide reference image)
+  - Detailed Gotham cityscape silhouettes — buildings, spires, antennas, water towers
+  - Character-density shading for depth and atmosphere
+  - Full-width, vertically centered on screen
 
-- [ ] Create `GOTHAM_SKYLINE: list[str]` building silhouettes (~10-12 rows, full width)
-  - Simple blocky buildings with antenna spires, occasional window dots
-  - Very dim grey/blue coloring, stays behind portrait
-
-- [ ] Implement color mapping system
-  - `_CHAR_DENSITY: dict[str, float]` — char → 0.0–1.0 density
-  - `_crimson_for_density(density)` — dense → vivid red `#ff1400`, sparse → deep crimson `#2a0000`
-  - `_CHEST_TEXT_POSITIONS: set` — cells rendered in bat-gold `#f5c518`
-  - Skyline colors: very dark grey/blue (`#0d0d1a` to `#1a1a2a`)
-
-- [ ] Write `BatmanPortraitScreen(Screen[None])` class
+- [ ] Implement color mapping + animation system
+  - Skyline colors: dark blues/greys with atmospheric depth
   - Fade-from-darkness animation: global brightness ramp 0→1
-  - Density-weighted: `eff_b = min(1.0, brightness * (0.5 + density * 0.5))`
-  - Dense/bright areas appear first, sparse/dark emerge later
-  - Skyline fades at 60% of portrait brightness
   - Timing: 0.05s tick (20fps), ~4s fade, ~2s hold
   - Two-stage keypress: skip to settled → dismiss
-  - Blank screen wipe on dismiss (same pattern as BatcaveScreen)
+
+- [ ] Write `GothamSkylineScreen(Screen[None])` class in `widgets/skyline.py`
+  - Same lifecycle as BatcaveScreen (compose → mount → timer → tick → draw → dismiss)
+  - Blank screen wipe on dismiss
 
 - [ ] Wire up in `app.py` for development testing
-  - Temporarily push `BatmanPortraitScreen` instead of `BatcaveScreen`
-  - Later: chain block letters → portrait → dismiss
+  - Temporarily push `GothamSkylineScreen` instead of `BatcaveScreen`
+  - Later: chain block letters → skyline → dismiss
 
-- [ ] Iterate on portrait quality and animation tuning
+- [ ] Iterate on skyline quality and animation with user feedback
+
+> **Note:** Batman portrait (original 6b plan) deferred — may revisit later.
 
 ---
 
