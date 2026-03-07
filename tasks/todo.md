@@ -267,36 +267,32 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 ### Phase 6b — ASCII Portrait Backdrop Behind BAT CODE Text
 
 > **Approach:** Convert a high-res Batman portrait image into colored ASCII art
-> using density-mapped characters with per-character truecolor. The portrait
-> fades in from darkness as a backdrop behind the BAT CODE block letters.
+> using density-mapped characters with per-character truecolor. Portrait is a
+> static background visible from the first frame — only BAT CODE letters animate.
 >
-> **Technique:** `img2ascii.py` conversion script — maps pixel luminance to
-> visible ASCII characters (no block elements), with 24-bit truecolor per char.
-> Uses "gotham" charset that matches the glitch character aesthetic.
+> **Technique:** Runtime Pillow conversion (`portrait.py`) — maps pixel luminance
+> to visible ASCII characters (no block elements), with 24-bit truecolor per char.
+> Uses "gotham" charset. Generated at exact terminal dimensions on each launch.
 
 - [x] Research image-to-terminal conversion techniques (half-block, braille, ASCII density)
-- [x] Build `tools/img2ascii.py` — image → colored ASCII art conversion script
-  - Preprocessing: contrast enhancement, unsharp mask, LANCZOS downscale
-  - Multiple charsets: standard, extended, gotham (no block chars)
-  - Output modes: --preview (ANSI terminal), --html (browser), --output (Python module)
-- [x] Build `tools/img2halfblock.py` — image → half-block pixel art (explored, then removed)
+- [x] Build `tools/img2ascii.py` — standalone image → ASCII art converter
 - [x] Select source image: dark dramatic Batman portrait (1354314.jpeg)
-- [x] Test and iterate on charset — settled on "gotham" charset (no block elements)
-- [x] Generate HD preview (200x56 chars) — user approved fidelity
+- [x] Test and iterate on charset — settled on "gotham" (no block elements)
+- [x] Build `portrait.py` runtime converter (Pillow, LANCZOS, contrast+sharpen)
+- [x] Bundle source image at `batman_code/assets/batman_portrait.jpg`
+- [x] Integrate portrait as static backdrop in `batcave.py`
+  - Pre-rendered base grid (done once, shallow-copied per frame)
+  - BAT CODE letters render on top of portrait
+  - Only letter cells glitch — portrait stays static
+- [x] Shrink BAT CODE letters to 6-row compact font (performance)
+- [x] Push BAT CODE offset down to ~60% screen height (Batman's chest)
+- [x] Remove fade-in animation (too laggy on large grids)
 
-- [ ] Generate final portrait data as Python module (`--output portrait_data.py`)
-- [ ] Integrate portrait as backdrop layer in `batcave.py`
-  - Replace batarang backdrop with ASCII portrait
-  - Portrait fades in from darkness (brightness ramp 0→1) AFTER letters settle
-  - BAT CODE block letters render on top of portrait
-  - Portrait only visible where no letter cells exist
-- [ ] Add portrait fade animation to hold phase
-  - Smooth brightness ramp using `build_portrait(brightness)` function
-  - Perceptual curve (`progress ** 1.5`) for natural fade-in
-  - ~3-4 seconds from black to full brightness
-- [ ] Modify `_skip_to_settled()` to also set portrait to full brightness
-- [ ] Test full animation: letters glitch→settle → portrait fades in → prompt appears
-- [ ] Iterate on portrait sizing, contrast, timing with user feedback
+- [ ] Selective background cleanup — user will provide screenshots showing areas to remove
+  - Global luminance threshold (0.12) was too crude — removed too much, kept wrong pixels
+  - Need user-guided approach based on visual feedback
+- [ ] Final visual polish (timing, positioning, contrast tweaks)
+- [ ] Commit and push when user is satisfied
 
 ---
 
