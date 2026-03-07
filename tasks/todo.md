@@ -264,25 +264,39 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
     - Box-drawing edges (`║═╔╗╚╝`): flat bat-gold (`#f5c518`)
   - Prompt text: dimmer gold (`#c49e14`)
 
-### Phase 6b — Batarang Backdrop Behind BAT CODE Text
+### Phase 6b — ASCII Portrait Backdrop Behind BAT CODE Text
 
-- [ ] Add `BATARANG_ART: list[str]` to `batcave.py`
-  - Large angular batarang shape (~80+ cols wide, ~15-20 rows tall)
-  - Built from `█▄▀▌▐` block chars for smooth edges
-  - Centered behind the BAT CODE text
+> **Approach:** Convert a high-res Batman portrait image into colored ASCII art
+> using density-mapped characters with per-character truecolor. The portrait
+> fades in from darkness as a backdrop behind the BAT CODE block letters.
+>
+> **Technique:** `img2ascii.py` conversion script — maps pixel luminance to
+> visible ASCII characters (no block elements), with 24-bit truecolor per char.
+> Uses "gotham" charset that matches the glitch character aesthetic.
 
-- [ ] Add batarang fade animation to `BatcaveScreen`
-  - Two-phase: block letters glitch→settle first (existing), then batarang fades in behind
-  - Smooth brightness ramp 0→1 over ~2-3s during hold phase
-  - Color: dark Gotham blue `#1a3a5c`
-  - Text cells always render on top (batarang only shows where no text exists)
-  - Extend hold phase to wait for batarang fade + short pause before prompt
+- [x] Research image-to-terminal conversion techniques (half-block, braille, ASCII density)
+- [x] Build `tools/img2ascii.py` — image → colored ASCII art conversion script
+  - Preprocessing: contrast enhancement, unsharp mask, LANCZOS downscale
+  - Multiple charsets: standard, extended, gotham (no block chars)
+  - Output modes: --preview (ANSI terminal), --html (browser), --output (Python module)
+- [x] Build `tools/img2halfblock.py` — image → half-block pixel art (explored, then removed)
+- [x] Select source image: dark dramatic Batman portrait (1354314.jpeg)
+- [x] Test and iterate on charset — settled on "gotham" charset (no block elements)
+- [x] Generate HD preview (200x56 chars) — user approved fidelity
 
-- [ ] Modify `_skip_to_settled()` to also set batarang to full brightness
-
-- [ ] Iterate on batarang art shape, fade timing, colors with user feedback
-
-> **Note:** Portrait and skyline plans scrapped — TUI works best with geometric shapes.
+- [ ] Generate final portrait data as Python module (`--output portrait_data.py`)
+- [ ] Integrate portrait as backdrop layer in `batcave.py`
+  - Replace batarang backdrop with ASCII portrait
+  - Portrait fades in from darkness (brightness ramp 0→1) AFTER letters settle
+  - BAT CODE block letters render on top of portrait
+  - Portrait only visible where no letter cells exist
+- [ ] Add portrait fade animation to hold phase
+  - Smooth brightness ramp using `build_portrait(brightness)` function
+  - Perceptual curve (`progress ** 1.5`) for natural fade-in
+  - ~3-4 seconds from black to full brightness
+- [ ] Modify `_skip_to_settled()` to also set portrait to full brightness
+- [ ] Test full animation: letters glitch→settle → portrait fades in → prompt appears
+- [ ] Iterate on portrait sizing, contrast, timing with user feedback
 
 ---
 
