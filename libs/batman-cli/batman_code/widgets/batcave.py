@@ -1,15 +1,15 @@
 """Batcave loading screen for bat-code.
 
-"BAT CODE" block-letter text materializes from glitch noise.
-Only cells within the letter shapes glitch — the rest of the
-screen stays black.  Letters settle from dark-blue noise into
-multi-shade bat-gold with a top-lit gradient: bright highlight
-at the top of each letter fading to a darker amber shadow at
-the bottom (█ faces only — box-drawing edges stay flat gold).
+Two-phase splash animation:
 
-A colored ASCII portrait of Batman is displayed as a static
-background from the start. The BAT CODE letters glitch and
-settle on top of it.
+Phase 1 — Portrait fade: A colored ASCII portrait of Batman fades in
+from darkness, holds briefly, then fades back to black. Each brightness
+level is pre-rendered as a Rich Text object at startup, so each frame
+is just a swap — O(1) per frame, zero computation.
+
+Phase 2 — Letter glitch: "BAT CODE" block letters materialize from
+glitch noise on a pure black background. Letters settle from dark-blue
+noise into multi-shade bat-gold with a top-lit gradient.
 
 Press any key or pass --no-splash to skip.
 """
@@ -17,7 +17,7 @@ Press any key or pass --no-splash to skip.
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from rich.text import Text
 from textual.app import ComposeResult
@@ -38,20 +38,16 @@ def _lerp_color(c1: str, c2: str, t: float) -> str:
 
 BG = "#0a0a0f"
 _PROMPT_COLOR = "#c49e14"
-
-# Flat gold for box-drawing characters (edges/corners)
 _GOLD_EDGE = "#f5c518"
 
-# Top-lit gradient for █ solid faces — narrow range, smooth perceptual curve
-_FACE_TOP    = "#ffe566"   # bright highlight
-_FACE_BOTTOM = "#9a7508"   # darker shadow bottom
+_FACE_TOP    = "#ffe566"
+_FACE_BOTTOM = "#9a7508"
 _FACE_SHADES = [
     _lerp_color(_FACE_TOP, _FACE_BOTTOM, (i / 5) ** 1.4) for i in range(6)
 ]
 
 
 def _gold_for_cell(ch: str, art_row: int) -> str:
-    """Return gold shade: smooth row gradient for █, flat for edges."""
     if ch == "█":
         idx = max(0, min(art_row, len(_FACE_SHADES) - 1))
         return _FACE_SHADES[idx]
@@ -64,13 +60,11 @@ _GLITCH_COLORS = [
     "#4a5a7c", "#1a3a5c", "#2d2d4e",
 ]
 
-# Portrait backdrop — generated at runtime to fit terminal dimensions
-from batman_code.widgets.portrait import generate_portrait
+from batman_code.widgets.portrait import generate_portrait_frames
 
-# Glyph set for glitch noise within letters
-_GLITCH_HEAVY = list("▓▒░╬╫╪┼╳※▪◆▄▀█@#$%&")
+_GLITCH_HEAVY = list("▓░█@#%&")
 
-# ── "BAT CODE" block-letter font (6 rows, compact 3D look) ────────────────────
+# ── "BAT CODE" block-letter font (6 rows, 3D box-drawing) ───────────────────
 
 _LETTERS: dict[str, list[str]] = {
     "B": [
@@ -137,9 +131,7 @@ _WORD_GAP = 3
 
 
 def _compose_text(text: str) -> list[str]:
-    """Compose block-letter words from the _LETTERS font."""
     words = text.split()
-    # Pad all letters to consistent width within each letter
     for letter_rows in _LETTERS.values():
         max_w = max(len(row) for row in letter_rows)
         for i, row in enumerate(letter_rows):
@@ -156,15 +148,19 @@ def _compose_text(text: str) -> list[str]:
 
 BAT_CODE_ASCII = _compose_text("BAT CODE")
 
-# ── Art cell — rich settling state ────────────────────────────────────────────
+# ── Art cell ─────────────────────────────────────────────────────────────────
+
+_COLOR_STEPS = 10
+
 
 @dataclass
 class _MatCell:
     final_ch:    str
     final_color: str
-    delay:       int       # ticks of pure chaos before settling
+    delay:       int
     ticks_left:  int
     total_ticks: int
+    color_steps: list[str] = field(default_factory=list)
     char_tick:   int = 0
     cur_char:    str = ""
 
@@ -178,7 +174,7 @@ class _MatCell:
 # ── Screen ────────────────────────────────────────────────────────────────────
 
 class BatcaveScreen(Screen[None]):
-    """'BAT CODE' block letters materialize from glitch noise."""
+    """Two-phase splash: portrait fade → letter glitch."""
 
     DEFAULT_CSS = """
     BatcaveScreen {
@@ -191,34 +187,53 @@ class BatcaveScreen(Screen[None]):
     }
     """
 
-    _TICK_S = 0.06  # ~17 fps
+    _TICK_S = 0.08
 
-    # Art cell timing
-    _ART_DELAY_MIN  = 5
-    _ART_DELAY_MAX  = 20
-    _ART_SETTLE_MIN = 20
-    _ART_SETTLE_MAX = 35
+    # Portrait fade timing
+    _FADE_IN_TICKS  = 15   # ~1.2s
+    _FADE_HOLD_TICKS = 6   # ~0.5s
+    _FADE_OUT_TICKS = 12   # ~1.0s
+    _PAUSE_TICKS    = 4    # ~0.3s
 
-    _HOLD_TICKS = 25  # ~1.5s hold after letters settle before auto-dismiss
+    # Letter glitch timing
+    _ART_DELAY_MIN  = 1
+    _ART_DELAY_MAX  = 3
+    _ART_SETTLE_MIN = 3
+    _ART_SETTLE_MAX = 6
+    _HOLD_TICKS     = 15   # ~1.2s
+
+    # Portrait brightness steps
+    _PORTRAIT_STEPS = 8
 
     def __init__(self, no_splash: bool = False) -> None:
         super().__init__()
         self._no_splash = no_splash
-        self._art_grid: dict[tuple, _MatCell] = {}
-        self._locked:   dict[tuple, tuple]    = {}
-        self._art_keys: set[tuple] = set()
-        self._glitch_t = 0
-        self._hold_t   = 0
-        self._holding  = False
-        self._done     = False
-        self._timer    = None
         self._display: Static | None = None
+        self._timer = None
+        self._done = False
         self._w = 0
         self._h = 0
+
+        # Phase state machine
+        self._phase = "fade_in"  # fade_in → fade_hold → fade_out → pause → glitch → hold
+        self._phase_tick = 0
+
+        # Phase 1: Portrait frames (pre-rendered Rich Text at each brightness)
+        self._portrait_frames: list[Text] = []
+        self._portrait_step = 0
+
+        # Phase 2: Letter glitch
+        self._art_grid: dict[tuple, _MatCell] = {}
         self._art_off_r = 0
         self._art_h = 0
-        # Pre-rendered base grid (portrait + black bg) — never changes after _build
+        # Black background grid + row cache for phase 2
         self._base_grid: list[list[tuple[str, str]]] = []
+        self._row_cache: list[list[tuple[str, str]]] = []
+        self._dirty_rows: set[int] = set()
+        self._row_art_count: dict[int, int] = {}
+
+        # Pre-built black screen
+        self._black_screen: Text | None = None
 
     def compose(self) -> ComposeResult:
         self._display = Static("", id="bb-display")
@@ -235,21 +250,33 @@ class BatcaveScreen(Screen[None]):
     def on_key(self) -> None:
         if self._done:
             return
-        if self._holding:
-            self._finish()
-        else:
+        if self._phase in ("fade_in", "fade_hold", "fade_out", "pause"):
+            # Skip portrait phase → jump to glitch
+            self._phase = "glitch"
+            self._phase_tick = 0
+            self._draw_glitch()
+        elif self._phase == "glitch":
             self._skip_to_settled()
+        elif self._phase == "hold":
+            self._finish()
 
     # ── Setup ─────────────────────────────────────────────────────────────────
 
     def _build(self, w: int, h: int) -> None:
-        art    = BAT_CODE_ASCII
-        art_h  = len(art)
-        art_w  = max(len(line) for line in art)
-        # Push letters down toward ~60% of screen (Batman's chest area)
-        # Clamp so letters + prompt don't overflow the screen
-        off_r  = max(0, min(int(h * 0.6) - art_h // 2, h - art_h - 4))
-        off_c  = max(0, (w - art_w) // 2)
+        # Phase 1: Pre-render portrait at multiple brightness levels
+        self._portrait_frames = generate_portrait_frames(
+            w, h, num_steps=self._PORTRAIT_STEPS
+        )
+
+        # Pre-build black screen
+        self._black_screen = self._build_black(w, h)
+
+        # Phase 2: Set up letter art grid on black background
+        art = BAT_CODE_ASCII
+        art_h = len(art)
+        art_w = max(len(line) for line in art)
+        off_r = max(0, (h - art_h) // 2)
+        off_c = max(0, (w - art_w) // 2)
 
         self._art_off_r = off_r
         self._art_h = art_h
@@ -260,24 +287,25 @@ class BatcaveScreen(Screen[None]):
                     key = (r + off_r, c + off_c)
                     total = random.randint(self._ART_SETTLE_MIN, self._ART_SETTLE_MAX)
                     delay = random.randint(self._ART_DELAY_MIN, self._ART_DELAY_MAX)
+                    final_color = _gold_for_cell(ch, r)
+                    glitch_c = random.choice(_GLITCH_COLORS)
+                    steps = [
+                        _lerp_color(glitch_c, final_color, (i / (_COLOR_STEPS - 1)) ** 1.5)
+                        for i in range(_COLOR_STEPS)
+                    ]
                     self._art_grid[key] = _MatCell(
-                        final_ch=ch, final_color=_gold_for_cell(ch, r),
+                        final_ch=ch, final_color=final_color,
                         delay=delay, ticks_left=total, total_ticks=total,
+                        color_steps=steps,
                         cur_char=random.choice(_GLITCH_HEAVY),
                     )
-                    self._art_keys.add(key)
+                    row_idx = key[0]
+                    self._dirty_rows.add(row_idx)
+                    self._row_art_count[row_idx] = self._row_art_count.get(row_idx, 0) + 1
 
-        # Pre-render portrait into base grid (done once, reused every frame)
-        portrait = generate_portrait(w, h)
+        # Black base grid for phase 2
         self._base_grid = [[(" ", BG)] * w for _ in range(h)]
-        for r, row in enumerate(portrait):
-            if r >= h:
-                break
-            for c, (ch, (pr, pg, pb)) in enumerate(row):
-                if c >= w:
-                    break
-                if ch != " ":
-                    self._base_grid[r][c] = (ch, f"#{pr:02x}{pg:02x}{pb:02x}")
+        self._row_cache = [self._build_row_segments(r) for r in range(h)]
 
     # ── Tick ──────────────────────────────────────────────────────────────────
 
@@ -285,18 +313,61 @@ class BatcaveScreen(Screen[None]):
         if self._done:
             return
 
-        self._glitch_t += 1
+        self._phase_tick += 1
 
-        if self._holding:
-            # Hold after letters settle, then auto-dismiss
-            self._hold_t += 1
-            if self._hold_t >= self._HOLD_TICKS:
+        if self._phase == "fade_in":
+            # Advance brightness: map tick to portrait step
+            step = min(
+                int(self._phase_tick / self._FADE_IN_TICKS * self._PORTRAIT_STEPS),
+                self._PORTRAIT_STEPS - 1,
+            )
+            self._portrait_step = step
+            if self._display:
+                self._display.update(self._portrait_frames[step])
+            if self._phase_tick >= self._FADE_IN_TICKS:
+                self._phase = "fade_hold"
+                self._phase_tick = 0
+
+        elif self._phase == "fade_hold":
+            # Hold at full brightness
+            if self._display:
+                self._display.update(self._portrait_frames[-1])
+            if self._phase_tick >= self._FADE_HOLD_TICKS:
+                self._phase = "fade_out"
+                self._phase_tick = 0
+
+        elif self._phase == "fade_out":
+            # Reverse brightness
+            step = max(
+                0,
+                self._PORTRAIT_STEPS - 1 - int(self._phase_tick / self._FADE_OUT_TICKS * self._PORTRAIT_STEPS),
+            )
+            self._portrait_step = step
+            if self._display:
+                self._display.update(self._portrait_frames[step])
+            if self._phase_tick >= self._FADE_OUT_TICKS:
+                self._phase = "pause"
+                self._phase_tick = 0
+
+        elif self._phase == "pause":
+            # Black screen pause
+            if self._display and self._black_screen:
+                self._display.update(self._black_screen)
+            if self._phase_tick >= self._PAUSE_TICKS:
+                self._phase = "glitch"
+                self._phase_tick = 0
+
+        elif self._phase == "glitch":
+            self._tick_glitch()
+
+        elif self._phase == "hold":
+            self._phase_tick += 0  # already incremented above
+            if self._phase_tick >= self._HOLD_TICKS:
                 self._finish()
-                return
-            self._draw(self._w, self._h)
-            return
 
-        # ── Advance art cells ────────────────────────────────────────────────
+    # ── Glitch tick (phase 2) ─────────────────────────────────────────────────
+
+    def _tick_glitch(self) -> None:
         newly_locked: list[tuple] = []
 
         for key, mat in self._art_grid.items():
@@ -309,101 +380,125 @@ class BatcaveScreen(Screen[None]):
             mat.char_tick += 1
             p = mat.progress
 
-            if p >= 0.95:
+            if p >= 0.9:
                 mat.cur_char = mat.final_ch
-            else:
-                if p < 0.3:
-                    change_every = 1
-                elif p < 0.6:
-                    change_every = 2
-                elif p < 0.8:
-                    change_every = 3
-                else:
-                    change_every = 5
-
-                if mat.char_tick >= change_every:
+            elif p >= 0.6:
+                if mat.char_tick >= 3:
                     mat.char_tick = 0
-                    if random.random() < p * 0.85:
-                        mat.cur_char = mat.final_ch
-                    else:
-                        mat.cur_char = random.choice(_GLITCH_HEAVY)
+                    mat.cur_char = mat.final_ch if random.random() < 0.7 else random.choice(_GLITCH_HEAVY)
+            elif p >= 0.3:
+                if mat.char_tick >= 2:
+                    mat.char_tick = 0
+                    mat.cur_char = mat.final_ch if random.random() < p else random.choice(_GLITCH_HEAVY)
+            else:
+                mat.cur_char = random.choice(_GLITCH_HEAVY)
 
             if mat.ticks_left <= 0:
                 newly_locked.append(key)
 
         for key in newly_locked:
+            r, c = key
             mat = self._art_grid.pop(key)
-            self._locked[key] = (mat.final_ch, mat.final_color)
+            self._base_grid[r][c] = (mat.final_ch, mat.final_color)
+            self._row_art_count[r] -= 1
+            if self._row_art_count[r] <= 0:
+                self._dirty_rows.discard(r)
+                self._row_cache[r] = self._build_row_segments(r)
 
-        # ── Check completion ──────────────────────────────────────────────────
         if not self._art_grid:
-            self._holding = True
+            self._phase = "hold"
+            self._phase_tick = 0
 
-        self._draw(self._w, self._h)
+        self._draw_glitch()
 
-    # ── Render ────────────────────────────────────────────────────────────────
+    # ── Render (phase 2 only) ─────────────────────────────────────────────────
 
-    def _draw(self, w: int, h: int) -> None:
-        glitch_color = _GLITCH_COLORS[self._glitch_t % len(_GLITCH_COLORS)]
+    def _build_row_segments(self, row_idx: int) -> list[tuple[str, str]]:
+        row = self._base_grid[row_idx]
+        segments: list[tuple[str, str]] = []
+        col = 0
+        w = len(row)
+        while col < w:
+            ch, color = row[col]
+            start = col
+            while col < w and row[col][1] == color:
+                col += 1
+            segments.append(("".join(r[0] for r in row[start:col]), color))
+        return segments
 
-        # Start from pre-rendered base grid (portrait background) — shallow copy rows
-        grid: list[list[tuple[str, str]]] = [row[:] for row in self._base_grid]
+    def _draw_glitch(self) -> None:
+        w, h = self._w, self._h
 
-        # Locked art cells (on top of portrait)
-        for (r, c), (ch, color) in self._locked.items():
-            if 0 <= r < h and 0 <= c < w:
-                grid[r][c] = (ch, color)
-
-        # Materializing art cells (on top of portrait)
+        # Build art cell overlay for dirty rows
+        art_by_row: dict[int, list[tuple[int, str, str]]] = {}
+        max_step = _COLOR_STEPS - 1
         for (r, c), mat in self._art_grid.items():
             if 0 <= r < h and 0 <= c < w:
                 if mat.delay > 0:
-                    grid[r][c] = (mat.cur_char, glitch_color)
+                    color = mat.color_steps[0]
                 else:
-                    p = mat.progress
-                    cell_color = _lerp_color(glitch_color, mat.final_color, p ** 1.5)
-                    grid[r][c] = (mat.cur_char, cell_color)
+                    step = min(int(mat.progress * max_step), max_step)
+                    color = mat.color_steps[step]
+                art_by_row.setdefault(r, []).append((c, mat.cur_char, color))
 
-        # Prompt text during hold phase (after letters settle)
-        if self._holding:
+        # Prompt during hold
+        prompt_cells: list[tuple[int, str, str]] | None = None
+        if self._phase == "hold":
             prompt = "Press any key to enter the Batcave..."
             prompt_r = self._art_off_r + self._art_h + 3
-            prompt_c = max(0, (w - len(prompt)) // 2)
-            for i, ch in enumerate(prompt):
-                c = prompt_c + i
-                if 0 <= prompt_r < h and 0 <= c < w:
-                    grid[prompt_r][c] = (ch, _PROMPT_COLOR)
+            if 0 <= prompt_r < h:
+                prompt_c = max(0, (w - len(prompt)) // 2)
+                prompt_cells = [
+                    (prompt_c + i, ch, _PROMPT_COLOR)
+                    for i, ch in enumerate(prompt)
+                    if prompt_c + i < w
+                ]
 
-        # Build Rich Text
+        # Build Rich Text row-by-row
         text = Text(overflow="fold", no_wrap=True)
-        for row in grid:
-            col = 0
-            while col < len(row):
-                ch, color = row[col]
-                start = col
-                while col < len(row) and row[col][1] == color:
-                    col += 1
-                text.append("".join(r[0] for r in row[start:col]), style=color)
+        for r in range(h):
+            row_arts = art_by_row.get(r)
+            is_prompt_row = prompt_cells is not None and r == self._art_off_r + self._art_h + 3
+
+            if row_arts or is_prompt_row or r in self._dirty_rows:
+                row = self._base_grid[r][:]
+                if row_arts:
+                    for c, ch, color in row_arts:
+                        row[c] = (ch, color)
+                if is_prompt_row and prompt_cells:
+                    for c, ch, color in prompt_cells:
+                        row[c] = (ch, color)
+                col = 0
+                while col < w:
+                    ch, color = row[col]
+                    start = col
+                    while col < w and row[col][1] == color:
+                        col += 1
+                    text.append("".join(cell[0] for cell in row[start:col]), style=color)
+            else:
+                for run, style in self._row_cache[r]:
+                    text.append(run, style=style)
             text.append("\n")
 
         if self._display:
             self._display.update(text)
 
-    # ── Skip to settled ───────────────────────────────────────────────────────
+    # ── Skip / finish ─────────────────────────────────────────────────────────
 
     def _skip_to_settled(self) -> None:
-        """Instantly lock all art cells, enter hold phase."""
-        for key, mat in self._art_grid.items():
-            self._locked[key] = (mat.final_ch, mat.final_color)
+        for (r, c), mat in self._art_grid.items():
+            self._base_grid[r][c] = (mat.final_ch, mat.final_color)
+        affected_rows = set(self._dirty_rows)
         self._art_grid.clear()
-        self._holding = True
-        self._draw(self._w, self._h)
+        self._dirty_rows.clear()
+        self._row_art_count.clear()
+        for r in affected_rows:
+            self._row_cache[r] = self._build_row_segments(r)
+        self._phase = "hold"
+        self._phase_tick = 0
+        self._draw_glitch()
 
-    # ── Lifecycle ─────────────────────────────────────────────────────────────
-
-    def _blank_screen(self) -> Text:
-        """Build a full-screen blank to wipe residual chars on dismiss."""
-        w, h = self._w, self._h
+    def _build_black(self, w: int, h: int) -> Text:
         line = " " * w + "\n"
         opaque_style = f"{BG} on {BG}"
         text = Text(overflow="fold", no_wrap=True)
@@ -418,11 +513,9 @@ class BatcaveScreen(Screen[None]):
         if self._timer:
             self._timer.stop()
         self._art_grid.clear()
-        self._locked.clear()
         if self._display:
-            self._display.update(self._blank_screen())
+            self._display.update(self._build_black(self._w, self._h))
         self.call_after_refresh(self._deferred_dismiss)
 
     def _deferred_dismiss(self) -> None:
-        """Dismiss after the blank frame has been painted by the compositor."""
         self.dismiss()
