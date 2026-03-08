@@ -288,10 +288,14 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 - [x] Push BAT CODE offset down to ~60% screen height (Batman's chest)
 - [x] Remove fade-in animation (too laggy on large grids)
 
-- [ ] Selective background cleanup — user will provide screenshots showing areas to remove
-  - Global luminance threshold (0.12) was too crude — removed too much, kept wrong pixels
-  - Need user-guided approach based on visual feedback
-- [ ] Final visual polish (timing, positioning, contrast tweaks)
+- [x] Selective background cleanup — tried multiple approaches, reverted to full noise
+  - Global luminance threshold too crude; region-based too obvious
+  - Decided to keep full portrait with noise — looks atmospheric during fade
+- [x] Two-phase splash rewrite for performance
+  - Phase 1: Portrait fades in from darkness → holds → fades to black (pre-rendered frames, O(1)/frame)
+  - Phase 2: BAT CODE letters glitch in on pure black background (row-cached, no portrait lag)
+  - Pre-computed color tables, dirty-row tracking, hold-phase skip
+- [ ] Final visual polish (timing, fade curve, user feedback on two-phase feel)
 - [ ] Commit and push when user is satisfied
 
 ---
