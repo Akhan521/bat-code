@@ -1,17 +1,8 @@
 """Batcave loading screen for bat-code.
 
-Two-phase splash animation:
-
-Phase 1 — Portrait fade: A colored ASCII portrait of Batman fades in
-from darkness, holds briefly, then fades back to black. Each brightness
-level is pre-rendered as a Rich Text object at startup, so each frame
-is just a swap — O(1) per frame, zero computation.
-
-Phase 2 — Letter glitch: "BAT CODE" block letters materialize from
-glitch noise on a pure black background. Letters settle from dark-blue
-noise into multi-shade bat-gold with a top-lit gradient.
-
-Press any key or pass --no-splash to skip.
+"BAT CODE" block letters materialize from glitch noise on a pure black
+background. Letters settle from dark-blue noise into multi-shade bat-gold
+with a top-lit gradient. Press any key to skip, or --no-splash to bypass.
 """
 
 from __future__ import annotations
@@ -43,7 +34,7 @@ _GOLD_EDGE = "#f5c518"
 _FACE_TOP    = "#ffe566"
 _FACE_BOTTOM = "#9a7508"
 _FACE_SHADES = [
-    _lerp_color(_FACE_TOP, _FACE_BOTTOM, (i / 5) ** 1.4) for i in range(6)
+    _lerp_color(_FACE_TOP, _FACE_BOTTOM, (i / 9) ** 1.4) for i in range(10)
 ]
 
 
@@ -60,74 +51,100 @@ _GLITCH_COLORS = [
     "#4a5a7c", "#1a3a5c", "#2d2d4e",
 ]
 
-from batman_code.widgets.portrait import generate_portrait_frames
-
 _GLITCH_HEAVY = list("▓░█@#%&")
 
-# ── "BAT CODE" block-letter font (6 rows, 3D box-drawing) ───────────────────
+# ── "BAT CODE" block-letter font (10 rows, 3D box-drawing) ──────────────────
 
 _LETTERS: dict[str, list[str]] = {
     "B": [
-        "█████╗ ",
-        "██╔══██╗",
-        "█████╔╝",
-        "██╔══██╗",
-        "█████╔╝",
-        "╚════╝ ",
+        "████████╗ ",
+        "██╔═════██╗",
+        "██║     ██║",
+        "██║     ██║",
+        "████████╔╝",
+        "██╔═════██╗",
+        "██║     ██║",
+        "██║     ██║",
+        "████████╔╝",
+        "╚═══════╝ ",
     ],
     "A": [
-        " ████╗ ",
-        "██╔═██╗",
-        "██████║",
-        "██╔═██║",
-        "██║ ██║",
-        "╚═╝ ╚═╝",
+        "  ██████╗  ",
+        " ██╔════██╗",
+        "██╔╝    ╚██╗",
+        "██║      ██║",
+        "██████████║",
+        "██╔══════██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "╚═╝      ╚═╝",
     ],
     "T": [
-        "███████╗",
-        "╚═██╔══╝",
-        "  ██║   ",
-        "  ██║   ",
-        "  ██║   ",
-        "  ╚═╝   ",
+        "████████████╗",
+        "╚════██╔════╝",
+        "     ██║     ",
+        "     ██║     ",
+        "     ██║     ",
+        "     ██║     ",
+        "     ██║     ",
+        "     ██║     ",
+        "     ██║     ",
+        "     ╚═╝     ",
     ],
     "C": [
-        " █████╗ ",
-        "██╔════╝",
-        "██║     ",
-        "██║     ",
-        "╚█████╗ ",
-        " ╚════╝ ",
+        " ████████╗ ",
+        "██╔═══════╝",
+        "██║        ",
+        "██║        ",
+        "██║        ",
+        "██║        ",
+        "██║        ",
+        "██║        ",
+        "╚████████╗ ",
+        " ╚════════╝",
     ],
     "O": [
-        " █████╗ ",
-        "██╔══██╗",
-        "██║  ██║",
-        "██║  ██║",
-        "╚█████╔╝",
-        " ╚════╝ ",
+        " ████████╗ ",
+        "██╔══════██╗",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "╚████████╔╝",
+        " ╚════════╝",
     ],
     "D": [
-        "█████╗  ",
-        "██╔══██╗",
-        "██║  ██║",
-        "██║  ██║",
-        "█████╔╝ ",
-        "╚════╝  ",
+        "████████╗  ",
+        "██╔═════██╗",
+        "██║     ╚██╗",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║      ██║",
+        "██║     ╔██╝",
+        "████████╔╝ ",
+        "╚═══════╝  ",
     ],
     "E": [
-        "██████╗",
-        "██╔═══╝",
-        "████╗  ",
-        "██╔═╝  ",
-        "██████╗",
-        "╚═════╝",
+        "████████████╗",
+        "██╔═════════╝",
+        "██║          ",
+        "██║          ",
+        "████████╗    ",
+        "██╔═════╝    ",
+        "██║          ",
+        "██║          ",
+        "████████████╗",
+        "╚═══════════╝",
     ],
 }
 
-_FONT_HEIGHT = 6
-_LETTER_GAP = 1
-_WORD_GAP = 3
+_FONT_HEIGHT = 10
+_LETTER_GAP = 2
+_WORD_GAP = 5
 
 
 def _compose_text(text: str) -> list[str]:
@@ -174,7 +191,7 @@ class _MatCell:
 # ── Screen ────────────────────────────────────────────────────────────────────
 
 class BatcaveScreen(Screen[None]):
-    """Two-phase splash: portrait fade → letter glitch."""
+    """BAT CODE glitch splash screen."""
 
     DEFAULT_CSS = """
     BatcaveScreen {
@@ -189,21 +206,12 @@ class BatcaveScreen(Screen[None]):
 
     _TICK_S = 0.08
 
-    # Portrait fade timing
-    _FADE_IN_TICKS  = 15   # ~1.2s
-    _FADE_HOLD_TICKS = 6   # ~0.5s
-    _FADE_OUT_TICKS = 12   # ~1.0s
-    _PAUSE_TICKS    = 4    # ~0.3s
-
     # Letter glitch timing
-    _ART_DELAY_MIN  = 1
-    _ART_DELAY_MAX  = 3
-    _ART_SETTLE_MIN = 3
-    _ART_SETTLE_MAX = 6
-    _HOLD_TICKS     = 15   # ~1.2s
-
-    # Portrait brightness steps
-    _PORTRAIT_STEPS = 8
+    _ART_DELAY_MIN  = 2
+    _ART_DELAY_MAX  = 7
+    _ART_SETTLE_MIN = 8
+    _ART_SETTLE_MAX = 16
+    _HOLD_TICKS     = 22   # ~1.8s
 
     def __init__(self, no_splash: bool = False) -> None:
         super().__init__()
@@ -215,25 +223,17 @@ class BatcaveScreen(Screen[None]):
         self._h = 0
 
         # Phase state machine
-        self._phase = "fade_in"  # fade_in → fade_hold → fade_out → pause → glitch → hold
+        self._phase = "glitch"  # glitch → hold
         self._phase_tick = 0
 
-        # Phase 1: Portrait frames (pre-rendered Rich Text at each brightness)
-        self._portrait_frames: list[Text] = []
-        self._portrait_step = 0
-
-        # Phase 2: Letter glitch
+        # Letter glitch state
         self._art_grid: dict[tuple, _MatCell] = {}
         self._art_off_r = 0
         self._art_h = 0
-        # Black background grid + row cache for phase 2
         self._base_grid: list[list[tuple[str, str]]] = []
         self._row_cache: list[list[tuple[str, str]]] = []
         self._dirty_rows: set[int] = set()
         self._row_art_count: dict[int, int] = {}
-
-        # Pre-built black screen
-        self._black_screen: Text | None = None
 
     def compose(self) -> ComposeResult:
         self._display = Static("", id="bb-display")
@@ -245,17 +245,13 @@ class BatcaveScreen(Screen[None]):
             return
         self._w, self._h = self.app.size.width, self.app.size.height
         self._build(self._w, self._h)
+        self._draw_glitch()
         self._timer = self.set_interval(self._TICK_S, self._tick)
 
     def on_key(self) -> None:
         if self._done:
             return
-        if self._phase in ("fade_in", "fade_hold", "fade_out", "pause"):
-            # Skip portrait phase → jump to glitch
-            self._phase = "glitch"
-            self._phase_tick = 0
-            self._draw_glitch()
-        elif self._phase == "glitch":
+        if self._phase == "glitch":
             self._skip_to_settled()
         elif self._phase == "hold":
             self._finish()
@@ -263,15 +259,6 @@ class BatcaveScreen(Screen[None]):
     # ── Setup ─────────────────────────────────────────────────────────────────
 
     def _build(self, w: int, h: int) -> None:
-        # Phase 1: Pre-render portrait at multiple brightness levels
-        self._portrait_frames = generate_portrait_frames(
-            w, h, num_steps=self._PORTRAIT_STEPS
-        )
-
-        # Pre-build black screen
-        self._black_screen = self._build_black(w, h)
-
-        # Phase 2: Set up letter art grid on black background
         art = BAT_CODE_ASCII
         art_h = len(art)
         art_w = max(len(line) for line in art)
@@ -303,7 +290,6 @@ class BatcaveScreen(Screen[None]):
                     self._dirty_rows.add(row_idx)
                     self._row_art_count[row_idx] = self._row_art_count.get(row_idx, 0) + 1
 
-        # Black base grid for phase 2
         self._base_grid = [[(" ", BG)] * w for _ in range(h)]
         self._row_cache = [self._build_row_segments(r) for r in range(h)]
 
@@ -315,57 +301,14 @@ class BatcaveScreen(Screen[None]):
 
         self._phase_tick += 1
 
-        if self._phase == "fade_in":
-            # Advance brightness: map tick to portrait step
-            step = min(
-                int(self._phase_tick / self._FADE_IN_TICKS * self._PORTRAIT_STEPS),
-                self._PORTRAIT_STEPS - 1,
-            )
-            self._portrait_step = step
-            if self._display:
-                self._display.update(self._portrait_frames[step])
-            if self._phase_tick >= self._FADE_IN_TICKS:
-                self._phase = "fade_hold"
-                self._phase_tick = 0
-
-        elif self._phase == "fade_hold":
-            # Hold at full brightness
-            if self._display:
-                self._display.update(self._portrait_frames[-1])
-            if self._phase_tick >= self._FADE_HOLD_TICKS:
-                self._phase = "fade_out"
-                self._phase_tick = 0
-
-        elif self._phase == "fade_out":
-            # Reverse brightness
-            step = max(
-                0,
-                self._PORTRAIT_STEPS - 1 - int(self._phase_tick / self._FADE_OUT_TICKS * self._PORTRAIT_STEPS),
-            )
-            self._portrait_step = step
-            if self._display:
-                self._display.update(self._portrait_frames[step])
-            if self._phase_tick >= self._FADE_OUT_TICKS:
-                self._phase = "pause"
-                self._phase_tick = 0
-
-        elif self._phase == "pause":
-            # Black screen pause
-            if self._display and self._black_screen:
-                self._display.update(self._black_screen)
-            if self._phase_tick >= self._PAUSE_TICKS:
-                self._phase = "glitch"
-                self._phase_tick = 0
-
-        elif self._phase == "glitch":
+        if self._phase == "glitch":
             self._tick_glitch()
 
         elif self._phase == "hold":
-            self._phase_tick += 0  # already incremented above
             if self._phase_tick >= self._HOLD_TICKS:
                 self._finish()
 
-    # ── Glitch tick (phase 2) ─────────────────────────────────────────────────
+    # ── Glitch tick ───────────────────────────────────────────────────────────
 
     def _tick_glitch(self) -> None:
         newly_locked: list[tuple] = []
@@ -411,7 +354,7 @@ class BatcaveScreen(Screen[None]):
 
         self._draw_glitch()
 
-    # ── Render (phase 2 only) ─────────────────────────────────────────────────
+    # ── Render ────────────────────────────────────────────────────────────────
 
     def _build_row_segments(self, row_idx: int) -> list[tuple[str, str]]:
         row = self._base_grid[row_idx]
@@ -441,7 +384,7 @@ class BatcaveScreen(Screen[None]):
                     color = mat.color_steps[step]
                 art_by_row.setdefault(r, []).append((c, mat.cur_char, color))
 
-        # Prompt during hold
+        # Prompt during hold phase
         prompt_cells: list[tuple[int, str, str]] | None = None
         if self._phase == "hold":
             prompt = "Press any key to enter the Batcave..."
@@ -498,14 +441,6 @@ class BatcaveScreen(Screen[None]):
         self._phase_tick = 0
         self._draw_glitch()
 
-    def _build_black(self, w: int, h: int) -> Text:
-        line = " " * w + "\n"
-        opaque_style = f"{BG} on {BG}"
-        text = Text(overflow="fold", no_wrap=True)
-        for _ in range(h):
-            text.append(line, style=opaque_style)
-        return text
-
     def _finish(self) -> None:
         if self._done:
             return
@@ -513,8 +448,6 @@ class BatcaveScreen(Screen[None]):
         if self._timer:
             self._timer.stop()
         self._art_grid.clear()
-        if self._display:
-            self._display.update(self._build_black(self._w, self._h))
         self.call_after_refresh(self._deferred_dismiss)
 
     def _deferred_dismiss(self) -> None:
