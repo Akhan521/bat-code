@@ -231,71 +231,22 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ## Phase 6 — Batcave Splash Screen (Multi-Phase)
 
-### Phase 6a — "BAT CODE" Block-Letter Glitch Animation (current)
+### Phase 6 — "BAT CODE" Block-Letter Glitch Animation — COMPLETE
 
-- [x] Write `batman_code/widgets/batcave.py`
-  - Class: `BatcaveScreen(Screen[None])` — full-screen Textual Screen
+- [x] `batman_code/widgets/batcave.py` — `BatcaveScreen(Screen[None])`
   - Skippable: any keypress skips to settled state; second keypress dismisses
   - `--no-splash` flag dismisses immediately
-
-- [x] **"BAT CODE" block-letter text:**
-  - `BAT_CODE_ASCII` — 6-row-tall block letters using `█╔═╗║╚╝` characters
-  - ~65 chars wide, centered horizontally and vertically on screen
-  - Only letter cells glitch — rest of screen stays black/empty
-
-- [x] **Per-cell smooth settling system:**
-  - `_MatCell` dataclass tracks: `final_ch`, `final_color`, `ticks_left`, `total_ticks`, `char_tick`, `cur_char`
-  - `progress` property: `1.0 - (ticks_left / total_ticks)` → 0.0 to 1.0
-  - Character cycling decelerates: every tick (0–30%) → every 2 ticks (30–60%) → every 3 (60–80%) → every 5 (80–95%) → frozen (95%+)
-  - Probability of showing final char blends up with progress (`random() < p * 0.85`)
+- [x] 10-row-tall block letters using `█╔═╗║╚╝` box-drawing chars
+  - ~99 chars wide, centered horizontally and vertically on screen
+  - 10-shade gold gradient (`_FACE_SHADES`), letter gap 2, word gap 5
+- [x] Per-cell smooth settling with `_MatCell` dataclass
+  - Delay 2-7 ticks, settle 8-16 ticks
+  - Character cycling decelerates with progress
   - Color lerps from dark-blue glitch → bat-gold via `progress^1.5`
-
-- [x] **Animation phases:**
-  - Chaos (~0.3–1.2s): Letter shapes filled with random glitch chars in dark blue/violet
-  - Settle (~1.2–2.1s): Cells decelerate, blue→gold color lerp, letters emerge
-  - Hold (~1.5s): Clean gold "BAT CODE" on black background
-  - Prompt: "Press any key to enter the Batcave..." appears below, then auto-dismiss
-
-- [x] **Color palette:**
-  - Background: `#0a0a0f` (Gotham night)
-  - Glitch colors: dark blues/violets (`#1a3a5c`, `#0d2440`, `#2d2d4e`)
-  - Final letter color: multi-shade bat-gold with top-lit gradient
-    - `█` solid faces: smooth gradient `#ffe566` (top) → `#9a7508` (bottom), `** 1.4` perceptual curve
-    - Box-drawing edges (`║═╔╗╚╝`): flat bat-gold (`#f5c518`)
-  - Prompt text: dimmer gold (`#c49e14`)
-
-### Phase 6b — ASCII Portrait Backdrop Behind BAT CODE Text
-
-> **Approach:** Convert a high-res Batman portrait image into colored ASCII art
-> using density-mapped characters with per-character truecolor. Portrait is a
-> static background visible from the first frame — only BAT CODE letters animate.
->
-> **Technique:** Runtime Pillow conversion (`portrait.py`) — maps pixel luminance
-> to visible ASCII characters (no block elements), with 24-bit truecolor per char.
-> Uses "gotham" charset. Generated at exact terminal dimensions on each launch.
-
-- [x] Research image-to-terminal conversion techniques (half-block, braille, ASCII density)
-- [x] Build `tools/img2ascii.py` — standalone image → ASCII art converter
-- [x] Select source image: dark dramatic Batman portrait (1354314.jpeg)
-- [x] Test and iterate on charset — settled on "gotham" (no block elements)
-- [x] Build `portrait.py` runtime converter (Pillow, LANCZOS, contrast+sharpen)
-- [x] Bundle source image at `batman_code/assets/batman_portrait.jpg`
-- [x] Integrate portrait as static backdrop in `batcave.py`
-  - Pre-rendered base grid (done once, shallow-copied per frame)
-  - BAT CODE letters render on top of portrait
-  - Only letter cells glitch — portrait stays static
-- [x] Shrink BAT CODE letters to 6-row compact font (performance)
-- [x] Push BAT CODE offset down to ~60% screen height (Batman's chest)
-- [x] Remove fade-in animation (too laggy on large grids)
-
-- [x] Selective background cleanup — tried multiple approaches, reverted to full noise
-  - Global luminance threshold too crude; region-based too obvious
-  - Decided to keep full portrait with noise — looks atmospheric during fade
-- [x] Two-phase splash rewrite for performance
-  - Phase 1: Portrait fades in from darkness → holds → fades to black (pre-rendered frames, O(1)/frame)
-  - Phase 2: BAT CODE letters glitch in on pure black background (row-cached, no portrait lag)
-  - Pre-computed color tables, dirty-row tracking, hold-phase skip
-- [ ] Final visual polish (timing, fade curve, user feedback on two-phase feel)
+- [x] "Press any key to enter the Batcave..." prompt during hold phase
+- [x] Auto-dismiss after hold (22 ticks / ~1.8s)
+- [x] Portrait feature explored and descoped — all portrait code, assets, and tools removed
+- [ ] User testing — verify glitch animation timing and feel
 - [ ] Commit and push when user is satisfied
 
 ---

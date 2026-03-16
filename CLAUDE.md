@@ -89,9 +89,9 @@ Python package: `batman_code/`
 - Color lerps smoothly from glitch blue → final gold using `progress^1.5`
 
 **Phases:**
-- **Chaos** (~0.3–1.2s): Letter shapes filled with random glitch chars in dark blue/violet
-- **Settle** (~1.2–2.1s): Cells decelerate, blue→gold color lerp, letters emerge
-- **Hold** (~1.5s): Final gold "BAT CODE" displayed, then prompt appears
+- **Chaos** (~0.5–1.5s): Letter shapes filled with random glitch chars in dark blue/violet
+- **Settle** (~1.5–3.0s): Cells decelerate, blue→gold color lerp, letters emerge
+- **Hold** (~1.8s): Final gold "BAT CODE" displayed, "Press any key to enter the Batcave..." prompt appears
 - **Dismiss**: Auto-dismiss after hold, or keypress
 
 #### 2. Five Agent Personas (`prompts/`)
