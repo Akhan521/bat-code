@@ -68,31 +68,59 @@ Python package: `batman_code/`
 ### Features (Phase 1)
 
 #### 1. Batcave Loading Screen (`widgets/batcave.py`)
-"BAT CODE" block-letter text materializes from glitch noise. Skippable with `--no-splash` or any keypress (two-stage: first press skips to settled, second dismisses).
+Multi-phase splash: "BAT CODE" block letters glitch in, hold, fade out, then a retro CRT Batcomputer materializes with a typewriter prompt. Skippable with `--no-splash` or keypress at any stage.
+
+**Phase flow:** `glitch → hold → fadeout → materialize → typewriter → dismiss`
 
 **Color palette (splash only):**
 - Background: `#0a0a0f` (Gotham night)
 - Glitch colors: dark blues/violets (`#1a3a5c`, `#0d2440`, `#2d2d4e`, etc.)
-- Final letter color: multi-shade bat-gold with top-lit gradient
+- BAT CODE letter color: multi-shade bat-gold with top-lit gradient
   - `█` solid faces: smooth gradient from bright highlight (`#ffe566`) at top to darker amber (`#9a7508`) at bottom, computed via `_lerp_color` with a `** 1.4` perceptual curve
   - Box-drawing edges (`║═╔╗╚╝`): flat bat-gold (`#f5c518`)
-- Prompt text: dimmer gold (`#c49e14`)
+- Batcomputer frame: Gotham blue `#1a3a5c` with half-block chars (`▀▄█░`) for depth
+- Screen border: brighter blue `#3a5a7c`
+- Inner glow strip: dim violet `#2d2d4e`
+- Header text: bat-gold `#f5c518`, underline dimmer gold `#9a7508`
+- Typewriter/prompt text: dimmer gold (`#c49e14`)
 
-**Block-letter art:**
+**BAT CODE block-letter art:**
 - 10-row-tall letters using `█╔═╗║╚╝` chars for 3D depth, centered on screen
 - Only letter cells animate — rest of screen stays black
 
-**Per-cell smooth settling:**
+**Per-cell smooth settling (used for glitch-in, fadeout, and materialize):**
 - Each cell tracks `progress` (0→1) over its lifetime
 - Character cycling decelerates: every tick at 0–30% → every 2–5 ticks at higher progress → frozen at 95%+
 - Probability of showing final char increases with progress (blended, not binary)
 - Color lerps smoothly from glitch blue → final gold using `progress^1.5`
+- Shared `_settle_cells()` method reused across glitch and materialize phases
+- Fadeout reverses: gold → glitch → black, chars degrade from original → glitch → space
+
+**Batcomputer CRT monitor:**
+- Full-screen: ~95% of terminal width, height fills terminal (no stand)
+- Built at runtime by `_build_computer_cells(screen_w, screen_h)`
+- Half-block beveled frame (`▀▄█░`), inner glow strip, box-drawing screen border
+- "BATCOMPUTER" title in 7-wide heavy block font (`_CRT_LETTERS`, 87 chars wide)
+- 10 rotating boot monologues (dramatic/cinematic tone), round-robin cycling via `~/.bat-code/state/monologue_idx`
+- Dark Knight color theme: gunmetal bezel (`#2a2a2a`), charcoal glow (`#1a1a1a`), muted gold screen border (`#8a7010`)
+- Materializes from Dark Knight glitch palette (`_CRT_GLITCH_COLORS` — warm darks) using same `_MatCell` animation system
 
 **Phases:**
-- **Chaos** (~0.5–1.5s): Letter shapes filled with random glitch chars in dark blue/violet
-- **Settle** (~1.5–3.0s): Cells decelerate, blue→gold color lerp, letters emerge
-- **Hold** (~1.8s): Final gold "BAT CODE" displayed, "Press any key to enter the Batcave..." prompt appears
-- **Dismiss**: Auto-dismiss after hold, or keypress
+- **Glitch** (~1–2s): BAT CODE letter shapes filled with random glitch chars, settling to gold
+- **Hold** (~1s): Final gold "BAT CODE" displayed briefly
+- **Fadeout** (~1s): Letters fade gold → glitch blue → black, chars degrade to space
+- **Materialize** (~1.5s): Batcomputer CRT materializes from glitch noise
+- **Typewriter**: Multi-line boot monologue types across full screen width (dim sage `#8a8a6a`), then "Press any key to enter the Batcave..." in brighter gold (`#c49e14`)
+  - 2 chars per 0.08s tick, blinking `█` cursor on current line
+  - Trailing `...` flickers after typing completes
+- **Dismiss**: Auto-dismiss after typewriter hold, or keypress
+
+**Keypress skip behavior:**
+- During glitch → snap to settled BAT CODE (hold)
+- During hold/fadeout → skip to settled Batcomputer, start typewriter
+- During materialize → snap to settled Batcomputer, start typewriter
+- During typewriter typing → snap to full text
+- After typewriter done → dismiss
 
 #### 2. Five Agent Personas (`prompts/`)
 Selected at launch with `--persona <name>`. Each is a `.md` prompt file defining communication style, signature phrases, and easter eggs:

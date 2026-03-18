@@ -231,7 +231,7 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ## Phase 6 — Batcave Splash Screen (Multi-Phase)
 
-### Phase 6 — "BAT CODE" Block-Letter Glitch Animation — COMPLETE
+### Phase 6a — "BAT CODE" Block-Letter Glitch Animation — COMPLETE
 
 - [x] `batman_code/widgets/batcave.py` — `BatcaveScreen(Screen[None])`
   - Skippable: any keypress skips to settled state; second keypress dismisses
@@ -243,11 +243,43 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
   - Delay 2-7 ticks, settle 8-16 ticks
   - Character cycling decelerates with progress
   - Color lerps from dark-blue glitch → bat-gold via `progress^1.5`
-- [x] "Press any key to enter the Batcave..." prompt during hold phase
-- [x] Auto-dismiss after hold (22 ticks / ~1.8s)
 - [x] Portrait feature explored and descoped — all portrait code, assets, and tools removed
-- [ ] User testing — verify glitch animation timing and feel
-- [ ] Commit and push when user is satisfied
+- [x] User testing — glitch animation approved
+- [x] Committed, pushed, and merged to main
+
+### Phase 6b — Batcomputer CRT + Typewriter — CODE COMPLETE
+
+- [x] New state machine: `glitch → hold → fadeout → materialize → typewriter → dismiss`
+- [x] Shortened hold phase (12 ticks / ~1s)
+- [x] Fadeout phase: BAT CODE letters fade gold → glitch blue → black
+  - Reverse of glitch-in: chars degrade from original → glitch pool → space
+  - Color lerps from gold → glitch → BG
+  - Staggered delays (0-4 ticks), settle 6-12 ticks
+- [x] Dynamic Batcomputer CRT art builder (`_build_computer_cells`)
+  - Full-screen: ~95% terminal width, height fills terminal (no stand)
+  - Half-block chars (`▀▄█░`) for beveled CRT frame with depth
+  - Dark Knight color theme: gunmetal bezel, charcoal glow, muted gold screen border
+  - "BATCOMPUTER" title in 7-wide heavy block font (`_CRT_LETTERS`, 87 chars wide)
+  - No stand — CRT fills the terminal
+- [x] Materialize phase: computer art glitch-settles in (reuses `_settle_cells`)
+  - Delay 1-5, settle 6-14 ticks
+  - Dark Knight glitch palette (`_CRT_GLITCH_COLORS`) — warm darks matching CRT theme
+- [x] 10 dramatic/cinematic boot monologues with round-robin cycling
+  - All dramatic/cinematic tone — Batman + coding + agents themed
+  - Round-robin via `~/.bat-code/state/monologue_idx` (no repeats across launches)
+  - Dim sage color (#8a8a6a) for system-log feel
+- [x] Multi-line typewriter: types monologue across full screen width, then "Press any key..."
+  - Full-width text flow — word-wraps to terminal width (no hard `\n`)
+  - 2 chars per tick for snappier typing
+  - Monologue lines in dim sage, prompt in brighter gold (#c49e14)
+  - Blinking `█` cursor on current line
+  - Trailing `...` flickers after typing completes (8 ticks)
+  - Auto-dismiss after 18-tick hold
+- [x] Shared `_settle_cells()` method extracted from `_tick_glitch`
+- [x] Updated keypress handling for all 5 phases
+- [x] `_skip_to_computer()` — instant skip from any phase to settled computer
+- [ ] User visual testing and approval
+- [ ] Commit and push
 
 ---
 
