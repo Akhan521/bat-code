@@ -43,6 +43,14 @@ _CRT_GLOW = "#1a1a1a"        # charcoal glow strip
 _CRT_SCREEN = "#8a7010"      # muted gold screen border
 _CRT_UNDERLINE = "#705a08"   # dim amber underline
 
+# Dark Knight glitch palette — warm darks matching the CRT theme
+_CRT_GLITCH_COLORS = [
+    "#1a1a1a", "#2a2a2a", "#1a1a1a",   # charcoal / gunmetal darks
+    "#3a3020", "#2a2010", "#1a1a1a",   # warm dark browns
+    "#4a3a10", "#3a2a08", "#2a2a2a",   # dim amber undertones
+    "#1a1a1a", "#3a3a3a", "#2a2010",   # neutral darks with warmth
+]
+
 _FACE_TOP    = "#ffe566"
 _FACE_BOTTOM = "#9a7508"
 _FACE_SHADES = [
@@ -762,7 +770,7 @@ class BatcaveScreen(Screen[None]):
                     key = (sr, sc)
                     total = random.randint(self._MAT_SETTLE_MIN, self._MAT_SETTLE_MAX)
                     delay = random.randint(self._MAT_DELAY_MIN, self._MAT_DELAY_MAX)
-                    glitch_c = random.choice(_GLITCH_COLORS)
+                    glitch_c = random.choice(_CRT_GLITCH_COLORS)
                     steps = [
                         _lerp_color(glitch_c, color, (i / (_COLOR_STEPS - 1)) ** 1.5)
                         for i in range(_COLOR_STEPS)
