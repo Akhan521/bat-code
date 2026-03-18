@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
+from pathlib import Path
+
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.screen import Screen
@@ -257,6 +259,25 @@ _BOOT_MONOLOGUES: list[str] = [
     "Gotham has its guardians above the skyline. But the real war is fought here \u2014 in the glow of the Batcomputer, where agents move faster than any signal across the night sky. Every deploy is a mission. Every refactor, a rescue. The Dark Knight's greatest weapon was never the suit. It was this machine.",
 ]
 
+_STATE_DIR = Path.home() / ".bat-code" / "state"
+
+
+def _next_monologue() -> str:
+    """Return the next monologue in round-robin order across launches."""
+    idx_file = _STATE_DIR / "monologue_idx"
+    try:
+        last = int(idx_file.read_text().strip())
+    except (FileNotFoundError, ValueError):
+        last = -1
+    nxt = (last + 1) % len(_BOOT_MONOLOGUES)
+    try:
+        _STATE_DIR.mkdir(parents=True, exist_ok=True)
+        idx_file.write_text(str(nxt))
+    except OSError:
+        pass  # non-fatal — fall back to sequential from 0
+    return _BOOT_MONOLOGUES[nxt]
+
+
 _MONOLOGUE_COLOR = "#8a8a6a"  # dim sage for system-log feel
 
 
@@ -479,7 +500,7 @@ class BatcaveScreen(Screen[None]):
 
         # Computer state
         self._computer_mw = 0
-        self._boot_monologue = random.choice(_BOOT_MONOLOGUES)
+        self._boot_monologue = _next_monologue()
 
         # Multi-line typewriter state
         self._tw_lines: list[str] = []        # all lines to type
