@@ -247,7 +247,7 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 - [x] User testing — glitch animation approved
 - [x] Committed, pushed, and merged to main
 
-### Phase 6b — Batcomputer CRT + Typewriter — CODE COMPLETE
+### Phase 6b — Batcomputer CRT + Typewriter — COMPLETE
 
 - [x] New state machine: `glitch → hold → fadeout → materialize → typewriter → dismiss`
 - [x] Shortened hold phase (12 ticks / ~1s)
@@ -259,7 +259,8 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
   - Full-screen: ~95% terminal width, height fills terminal (no stand)
   - Half-block chars (`▀▄█░`) for beveled CRT frame with depth
   - Dark Knight color theme: gunmetal bezel, charcoal glow, muted gold screen border
-  - "BATCOMPUTER" title in 7-wide heavy block font (`_CRT_LETTERS`, 87 chars wide)
+  - "BATCOMPUTER" title in 6-row block font (`_CRT_LETTERS`, 98 chars wide)
+  - Symmetric centering (monitor width parity matches screen width)
   - No stand — CRT fills the terminal
 - [x] Materialize phase: computer art glitch-settles in (reuses `_settle_cells`)
   - Delay 1-5, settle 6-14 ticks
@@ -272,14 +273,16 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
   - Full-width text flow — word-wraps to terminal width (no hard `\n`)
   - 2 chars per tick for snappier typing
   - Monologue lines in dim sage, prompt in brighter gold (#c49e14)
-  - Blinking `█` cursor on current line
-  - Trailing `...` flickers after typing completes (8 ticks)
-  - Auto-dismiss after 18-tick hold
+  - Blinking `█` cursor (14-tick cycle, ~0.56s on/off), waits for keypress to dismiss
+- [x] Top-lit gold gradient on BATCOMPUTER title (`_CRT_FACE_SHADES`)
+  - `█` blocks: 6-shade gradient (#ffe566 → #c5a530) with ** 1.4 perceptual curve
+  - Edge chars (`▄▀`): flat bright gold (#f5c518)
+  - Narrowed range so per-step deltas match the 10-row BAT CODE gradient smoothness
 - [x] Shared `_settle_cells()` method extracted from `_tick_glitch`
 - [x] Updated keypress handling for all 5 phases
 - [x] `_skip_to_computer()` — instant skip from any phase to settled computer
-- [ ] User visual testing and approval
-- [ ] Commit and push
+- [x] User visual testing and approval
+- [x] Committed, pushed, and merged to main
 
 ---
 
