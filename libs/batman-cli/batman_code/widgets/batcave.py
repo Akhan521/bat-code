@@ -873,6 +873,9 @@ class BatcaveScreen(Screen[None]):
         if not self._tw_done:
             for _ in range(self._TW_CHARS_PER_TICK):
                 if self._tw_line_idx >= len(self._tw_lines):
+                    # Clamp back to last line so cursor keeps rendering
+                    self._tw_line_idx = len(self._tw_lines) - 1
+                    self._tw_char_idx = len(self._tw_lines[-1])
                     self._tw_done = True
                     self._flicker_tick = 0
                     break
@@ -888,6 +891,9 @@ class BatcaveScreen(Screen[None]):
                         self._tw_line_idx += 1
                         self._tw_char_idx = 0
                 if self._tw_line_idx >= len(self._tw_lines):
+                    # Clamp back to last line so cursor keeps rendering
+                    self._tw_line_idx = len(self._tw_lines) - 1
+                    self._tw_char_idx = len(self._tw_lines[-1])
                     self._tw_done = True
                     self._flicker_tick = 0
                     break
@@ -895,11 +901,8 @@ class BatcaveScreen(Screen[None]):
             self._flicker_tick += 1
             if self._flicker_tick >= self._ELLIPSIS_FLICKER_TICKS:
                 self._flicker_done = True
-                self._phase_tick = 0  # reset for hold countdown
-        else:
-            if self._phase_tick >= self._COMPUTER_HOLD_TICKS:
-                self._finish()
-                return
+        # Once flicker is done, just keep rendering (blinking cursor)
+        # — wait for keypress to dismiss (no auto-dismiss)
 
         self._render_frame()
 
@@ -965,15 +968,8 @@ class BatcaveScreen(Screen[None]):
                     elif line_i == self._tw_line_idx:
                         # Currently typing line
                         revealed = line_text[:self._tw_char_idx]
-                        # Ellipsis flicker on final line
-                        if (self._tw_done and not self._flicker_done
-                                and self._flicker_tick % 3 != 0):
-                            if revealed.endswith("..."):
-                                revealed = revealed[:-3] + "   "
-                        # Blinking cursor
-                        cursor = ""
-                        if not self._flicker_done:
-                            cursor = "█" if self._phase_tick % 8 < 4 else " "
+                        # Blinking cursor (always shown while waiting)
+                        cursor = "█" if self._phase_tick % 14 < 7 else " "
                         full = revealed + cursor
                         for i, ch in enumerate(full):
                             if sc + i < w:
