@@ -100,7 +100,10 @@ Multi-phase splash: "BAT CODE" block letters glitch in, hold, fade out, then a r
 - Full-screen: ~95% of terminal width, height fills terminal (no stand)
 - Built at runtime by `_build_computer_cells(screen_w, screen_h)`
 - Half-block beveled frame (`▀▄█░`), inner glow strip, box-drawing screen border
-- "BATCOMPUTER" title in 7-wide heavy block font (`_CRT_LETTERS`, 87 chars wide)
+- "BATCOMPUTER" title in 6-row block font (`_CRT_LETTERS`, 98 chars wide)
+  - Top-lit gold gradient: `█` blocks shade from `#ffe566` → `#c5a530` (6 steps, `** 1.4` curve)
+  - Edge chars (`▄▀`) stay flat bright gold (`#f5c518`)
+  - Symmetric centering (monitor width parity matches screen width)
 - 10 rotating boot monologues (dramatic/cinematic tone), round-robin cycling via `~/.bat-code/state/monologue_idx`
 - Dark Knight color theme: gunmetal bezel (`#2a2a2a`), charcoal glow (`#1a1a1a`), muted gold screen border (`#8a7010`)
 - Materializes from Dark Knight glitch palette (`_CRT_GLITCH_COLORS` — warm darks) using same `_MatCell` animation system
@@ -111,9 +114,8 @@ Multi-phase splash: "BAT CODE" block letters glitch in, hold, fade out, then a r
 - **Fadeout** (~1s): Letters fade gold → glitch blue → black, chars degrade to space
 - **Materialize** (~1.5s): Batcomputer CRT materializes from glitch noise
 - **Typewriter**: Multi-line boot monologue types across full screen width (dim sage `#8a8a6a`), then "Press any key to enter the Batcave..." in brighter gold (`#c49e14`)
-  - 2 chars per 0.08s tick, blinking `█` cursor on current line
-  - Trailing `...` flickers after typing completes
-- **Dismiss**: Auto-dismiss after typewriter hold, or keypress
+  - 2 chars per 0.08s tick, blinking `█` cursor (14-tick cycle, ~0.56s on/off)
+- **Dismiss**: Keypress after typewriter completes (no auto-dismiss)
 
 **Keypress skip behavior:**
 - During glitch → snap to settled BAT CODE (hold)
