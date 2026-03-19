@@ -58,12 +58,23 @@ _FACE_BOTTOM = "#9a7508"
 _FACE_SHADES = [
     _lerp_color(_FACE_TOP, _FACE_BOTTOM, (i / 9) ** 1.4) for i in range(10)
 ]
+_CRT_FACE_BOTTOM = "#c5a530"  # ~60% of full range, so 6 steps ≈ same size as 10-step BAT CODE
+_CRT_FACE_SHADES = [
+    _lerp_color(_FACE_TOP, _CRT_FACE_BOTTOM, (i / 5) ** 1.4) for i in range(6)
+]
 
 
 def _gold_for_cell(ch: str, art_row: int) -> str:
     if ch == "█":
         idx = max(0, min(art_row, len(_FACE_SHADES) - 1))
         return _FACE_SHADES[idx]
+    return _GOLD_EDGE
+
+
+def _crt_gold_for_cell(ch: str, art_row: int) -> str:
+    if ch == "█":
+        idx = max(0, min(art_row, len(_CRT_FACE_SHADES) - 1))
+        return _CRT_FACE_SHADES[idx]
     return _GOLD_EDGE
 
 _GLITCH_COLORS = [
@@ -371,16 +382,16 @@ def _build_computer_cells(
     for _ in range(2 + top_extra):
         rows.append(screen_row())
 
-    # BATCOMPUTER title rows
+    # BATCOMPUTER title rows (top-lit gradient on █, flat gold on edges)
     if use_block_font:
-        for line in art_lines:
+        for font_row, line in enumerate(art_lines):
             left_pad = max(0, (iw - art_w) // 2)
             content: list[tuple[str, str]] = [(" ", BG)] * left_pad
             for ch in line:
                 if ch == " ":
                     content.append((" ", BG))
                 else:
-                    content.append((ch, G))
+                    content.append((ch, _crt_gold_for_cell(ch, font_row)))
             rows.append(screen_row(content))
     else:
         # Narrow fallback: spaced plain text
