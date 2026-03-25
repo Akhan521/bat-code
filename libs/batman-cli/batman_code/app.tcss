@@ -1,13 +1,242 @@
-/* bat-code — Batman color palette (Phase 1 minimal) */
+/* bat-code — Batman-themed Textual Stylesheet */
 
+/* ── Layers for z-ordering ──────────────────────────────────────────── */
 Screen {
+    layout: vertical;
+    background: #0a0a0f;
+    layers: base autocomplete batsignal;
+}
+
+/* ── Chat area — main scrollable messages area ──────────────────────── */
+#chat {
+    height: 1fr;
+    padding: 1 2;
     background: #0a0a0f;
 }
 
+/* Spacer fills remaining viewport below input */
+#chat-spacer {
+    height: auto;
+}
+
+/* Welcome banner */
+#welcome-banner {
+    height: auto;
+    margin-bottom: 1;
+}
+
+/* Messages area */
+#messages {
+    height: auto;
+}
+
+/* ── Bottom app container — holds ChatInput ─────────────────────────── */
+#bottom-app-container {
+    height: auto;
+    margin-top: 1;
+    padding: 0 1;
+}
+
+/* Input area */
+#input-area {
+    height: auto;
+    min-height: 3;
+    max-height: 25;
+}
+
+/* ── Placeholder (splash/loading fallback) ──────────────────────────── */
 #placeholder {
     width: 100%;
     height: 100%;
     content-align: center middle;
     color: #f5c518;
     background: #0a0a0f;
+}
+
+/* ── Approval menu — inline in messages area ────────────────────────── */
+.approval-menu {
+    height: auto;
+    margin: 1 0;
+    padding: 0 1;
+    background: #111118;
+    border: solid #f5c518;
+}
+
+.approval-menu .approval-title {
+    text-style: bold;
+    color: #f5c518;
+    margin-bottom: 0;
+}
+
+.approval-menu .approval-command {
+    height: auto;
+    margin: 0 0 1 0;
+    padding: 0 1;
+}
+
+.approval-menu .approval-info {
+    height: auto;
+    color: #6b7280;
+    margin-bottom: 1;
+}
+
+.approval-menu .approval-option {
+    height: 1;
+    padding: 0 1;
+}
+
+.approval-menu .approval-option-selected {
+    background: #1a3a5c;
+    text-style: bold;
+}
+
+.approval-menu .approval-help {
+    color: #6b7280;
+    text-style: italic;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Separator line between tool details and options */
+.approval-menu .approval-separator {
+    height: 1;
+    color: #f5c518;
+    margin: 0;
+}
+
+/* Scrollable tool info area in approval menu */
+.approval-menu .tool-info-scroll {
+    height: 10;
+    margin-top: 0;
+}
+
+/* Inner container for tool info */
+.approval-menu .tool-info-container {
+    height: auto;
+}
+
+/* Options container with background */
+.approval-menu .approval-options-container {
+    height: auto;
+    background: #0d0d14;
+    padding: 0 1;
+    margin-top: 0;
+}
+
+/* ── Status bar ─────────────────────────────────────────────────────── */
+#status-bar {
+    height: 1;
+    dock: bottom;
+    margin-bottom: 1;
+}
+
+/* DETECTIVE MODE (manual approval) */
+.detective-mode {
+    background: #1a3a5c;
+    color: #f5c518;
+}
+
+/* DARK KNIGHT MODE (auto-approve — dangerous) */
+.dark-knight-mode {
+    background: #8b0000;
+    color: #ffffff;
+}
+
+/* ── Tool approval widgets ──────────────────────────────────────────── */
+.tool-approval-widget {
+    height: auto;
+}
+
+.approval-file-path {
+    color: #f5c518;
+    text-style: bold;
+}
+
+.approval-description {
+    color: #6b7280;
+}
+
+/* ── Diff styling ───────────────────────────────────────────────────── */
+.diff-header {
+    height: auto;
+    color: #6b7280;
+}
+
+.diff-removed {
+    height: auto;
+    color: #ff8787;
+    background: #4a2020;
+    padding: 0 1;
+}
+
+.diff-added {
+    height: auto;
+    color: #8ce99a;
+    background: #1e4620;
+    padding: 0 1;
+}
+
+.diff-range {
+    height: auto;
+    color: #f5c518;
+    text-style: bold;
+}
+
+.diff-context {
+    height: auto;
+    color: #6b7280;
+    padding: 0 1;
+}
+
+/* ── Completion popup (used by ChatInput) — appears BELOW input ─────── */
+#completion-popup {
+    height: auto;
+    max-height: 12;
+    width: 100%;
+    margin-left: 3;
+    margin-top: 0;
+    padding: 0;
+    background: #0a0a0f;
+    color: #e0e0e0;
+}
+
+/* ── Message type styling ───────────────────────────────────────────── */
+.message-user {
+    border-left: thick #3a3a4a;
+    padding: 0 1;
+    margin: 0 0 1 0;
+}
+
+.message-assistant {
+    border-left: thick #f5c518;
+    padding: 0 1;
+    margin: 0 0 1 0;
+}
+
+.message-tool {
+    background: #1a1a2e;
+    padding: 0 1;
+    margin: 0 0 1 0;
+}
+
+.message-error {
+    border-left: thick #8b0000;
+    padding: 0 1;
+    margin: 0 0 1 0;
+}
+
+.message-system {
+    border-left: thick #1a3a5c;
+    padding: 0 1;
+    margin: 0 0 1 0;
+}
+
+/* ── Bat-signal overlay ─────────────────────────────────────────────── */
+#batsignal-overlay {
+    layer: batsignal;
+    width: 100%;
+    height: 100%;
+    content-align: center middle;
+    opacity: 0.35;
+    color: #f5c518;
 }
