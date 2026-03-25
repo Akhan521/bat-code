@@ -24,9 +24,9 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 1 — Config & Color System
+## Phase 1 — Config & Color System — COMPLETE
 
-- [ ] Write `batman_code/config.py`
+- [x] Write `batman_code/config.py`
   - Batman color palette constants (`COLORS` dict):
     - `background`: `#0a0a0f`
     - `bat_gold`: `#f5c518`
@@ -46,7 +46,7 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
   - `PERSONA_NAMES` list: `["batman", "alfred", "oracle", "nightwing", "joker"]`
   - `DEFAULT_PERSONA = "batman"`
 
-- [ ] Write `batman_code/app.tcss`
+- [x] Write `batman_code/app.tcss`
   - All color variables using Batman palette
   - `Screen` layer definitions (base, autocomplete, batsignal)
   - `#chat`, `#messages`, `#bottom-app-container`, `#input-area` layout
@@ -64,14 +64,15 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 2 — Model & Session Infrastructure
+## Phase 2 — Model & Session Infrastructure — IN PROGRESS
 
 > These are near-direct ports from `libs/cli/deepagents_cli/` with Batman naming.
 > Read each source file carefully before porting — do not blindly copy.
+> Plan: `.claude/plans/zazzy-foraging-hickey.md`
 
-- [ ] Port `batman_code/model_config.py` from `deepagents_cli/model_config.py`
+- [x] Port `batman_code/model_config.py` from `deepagents_cli/model_config.py`
   - Rename internal references from `deepagents` → `batman_code`
-- [ ] Port `batman_code/sessions.py` from `deepagents_cli/sessions.py`
+- [x] Port `batman_code/sessions.py` from `deepagents_cli/sessions.py`
   - Change DB path from `~/.deepagents/sessions.db` → `~/.bat-code/sessions.db`
   - Change table/metadata references to `bat-code`
 - [ ] Port `batman_code/project_utils.py` from `deepagents_cli/project_utils.py`
