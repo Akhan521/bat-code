@@ -36,7 +36,7 @@ from langchain.chat_models import init_chat_model  # noqa: E402
 from langchain_core.language_models import BaseChatModel  # noqa: E402
 from langchain_core.runnables import RunnableConfig  # noqa: E402
 
-from deepagents_cli.model_config import (  # noqa: E402
+from batman_code.model_config import (  # noqa: E402
     ModelConfig,
     ModelConfigError,
     ModelSpec,
@@ -47,6 +47,7 @@ DOCS_URL = "https://docs.langchain.com/oss/python/deepagents/cli"
 # ── Batman color palette ────────────────────────────────────────────────
 COLORS = {
     "background": "#0a0a0f",  # Gotham night
+    "primary": "#f5c518",  # Alias for bat_gold (compat with ported modules)
     "bat_gold": "#f5c518",  # Primary accent
     "gotham_blue": "#1a3a5c",  # Secondary
     "error": "#8b0000",  # Dark red
