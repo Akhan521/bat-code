@@ -19,6 +19,7 @@ dependencies = [
     "deepagents-cli>=0.0.21",
     "langchain>=1.2.10,<2.0.0",
     "langchain-core>=1.2.10,<2.0.0",
+    "Pillow>=10.0.0",
 ]
 
 [project.scripts]
