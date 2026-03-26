@@ -64,30 +64,36 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 2 — Model & Session Infrastructure — IN PROGRESS
+## Phase 2 — Model & Session Infrastructure — COMPLETE
 
-> These are near-direct ports from `libs/cli/deepagents_cli/` with Batman naming.
-> Read each source file carefully before porting — do not blindly copy.
-> Plan: `.claude/plans/zazzy-foraging-hickey.md`
+> Near-direct ports from `libs/cli/deepagents_cli/` with Batman naming.
+> All `deepagents_cli.*` imports remapped to `batman_code.*`.
+> SDK imports (`deepagents.*`) kept as-is.
+> Two deferred imports remain until Phase 4 — see `tasks/deferred-imports.md`.
 
 - [x] Port `batman_code/model_config.py` from `deepagents_cli/model_config.py`
   - Rename internal references from `deepagents` → `batman_code`
 - [x] Port `batman_code/sessions.py` from `deepagents_cli/sessions.py`
   - Change DB path from `~/.deepagents/sessions.db` → `~/.bat-code/sessions.db`
   - Change table/metadata references to `bat-code`
-- [ ] Port `batman_code/project_utils.py` from `deepagents_cli/project_utils.py`
-- [ ] Port `batman_code/tools.py` from `deepagents_cli/tools.py`
-  - Keep `fetch_url`, `http_request`, `web_search` — no Batman changes needed
-- [ ] Port `batman_code/file_ops.py` from `deepagents_cli/file_ops.py`
-- [ ] Port `batman_code/image_utils.py` from `deepagents_cli/image_utils.py`
-- [ ] Port `batman_code/clipboard.py` from `deepagents_cli/clipboard.py`
-- [ ] Port `batman_code/backends.py` from `deepagents_cli/backends.py`
-- [ ] Port `batman_code/subagents.py` from `deepagents_cli/subagents.py`
-- [ ] Port `batman_code/non_interactive.py` from `deepagents_cli/non_interactive.py`
-- [ ] Port `batman_code/local_context.py` from `deepagents_cli/local_context.py`
-- [ ] Port `batman_code/skills/` directory from `deepagents_cli/skills/`
-- [ ] Port `batman_code/integrations/` directory from `deepagents_cli/integrations/`
-  - Update any internal imports to point to `batman_code.*`
+- [x] Port `batman_code/project_utils.py` from `deepagents_cli/project_utils.py`
+- [x] Port `batman_code/tools.py` from `deepagents_cli/tools.py`
+  - User-Agent: `BatCode/1.0`, imports from `batman_code.config`
+- [x] Port `batman_code/file_ops.py` from `deepagents_cli/file_ops.py`
+- [x] Port `batman_code/image_utils.py` from `deepagents_cli/image_utils.py`
+- [x] Port `batman_code/clipboard.py` from `deepagents_cli/clipboard.py`
+- [x] Port `batman_code/backends.py` from `deepagents_cli/backends.py`
+- [x] Port `batman_code/subagents.py` from `deepagents_cli/subagents.py`
+- [x] Port `batman_code/non_interactive.py` from `deepagents_cli/non_interactive.py`
+  - DEFERRED: `from deepagents_cli.agent` import stays until Phase 4
+- [x] Port `batman_code/local_context.py` from `deepagents_cli/local_context.py`
+- [x] Port `batman_code/skills/` directory from `deepagents_cli/skills/`
+  - `__init__.py`, `load.py`, `commands.py`
+  - DEFERRED: `from deepagents_cli.ui` import in commands.py stays until Phase 4
+- [x] Port `batman_code/integrations/` directory from `deepagents_cli/integrations/`
+  - `__init__.py`, `sandbox_provider.py`, `sandbox_factory.py`
+  - `modal.py`, `daytona.py`, `runloop.py`, `langsmith.py`
+  - All internal imports point to `batman_code.*`
 
 ---
 
