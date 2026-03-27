@@ -97,53 +97,31 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 3 — Agent Personas
+## Phase 3 — Agent Personas — COMPLETE
 
-- [ ] Write `batman_code/prompts/batman.md`
-  - Terse, methodical, zero fluff
-  - Acts first, explains only when asked
-  - Max 2-sentence responses unless detail is explicitly requested
-  - Signatures: "Confirmed.", "Handled.", "Don't ask again."
-  - Never uses filler words or praise
-  - Easter eggs: responds to "why so serious?" with a single period
-  - Tool use: silent execution, reports only outcome
-
-- [ ] Write `batman_code/prompts/alfred.md`
-  - Refined British butler tone
-  - Verbose, always explains what it's doing and why
-  - Opens with "If I may, sir..." or "Master [user], if you'll permit me..."
-  - Closes responses with gentle commentary on the user's approach
-  - Flags potential issues diplomatically: "One might consider..."
-  - Easter egg: responds to "where's Bruce?" with "Master Wayne is... indisposed."
-
-- [ ] Write `batman_code/prompts/oracle.md`
-  - Pure analytical mode — Barbara Gordon / Oracle persona
-  - Data-driven, research-heavy, hacker aesthetic
-  - Outputs structured analysis: hypothesis → evidence → conclusion
-  - Uses precise technical language, no metaphors
-  - Comfortable with parallel sub-agent research tasks
-  - Easter egg: responds to "birds of a prey" pun with exactly one eye-roll emoji
-
-- [ ] Write `batman_code/prompts/nightwing.md`
-  - Fast, witty, collaborative — Dick Grayson energy
-  - More conversational than Batman, uses light humor
-  - Acknowledges the user as a partner, not a client
-  - Doesn't take itself too seriously but gets the job done
-  - Easter eggs: occasional Haley's Circus references, calls user "partner"
-
-- [ ] Write `batman_code/prompts/joker.md`
-  - Chaotic, theatrical, darkly funny
-  - Roasts bad code with Joker-esque dramatic flair
-  - Uses `--auto-approve` behavior (DARK KNIGHT MODE on by default)
-  - Comments on code quality unprompted and dramatically
-  - "Why so serious? It's just a memory leak."
-  - Easter egg: responds to "why so serious?" with an unhinged monologue about semicolons
-  - Warning shown at startup when joker persona is selected
-
-- [ ] Write `batman_code/system_prompt.md`
-  - Base behavior instructions (port from `deepagents_cli/system_prompt.md`)
-  - Replace all deepagents references with Batman context
-  - Add dynamic section: persona-specific instructions injected at runtime
+- [x] Write `batman_code/system_prompt.md`
+  - Ported from `deepagents_cli/system_prompt.md` (240 lines)
+  - Branding: "Deep Agents CLI" → "Bat-Code", "Deep Agent" → "Bat-Code agent"
+  - Added `{persona_instructions}` placeholder for runtime injection
+  - All safety rails (git, security, debugging) kept verbatim
+- [x] Write `batman_code/prompts/__init__.py`
+  - `load_persona(name)` utility — reads persona `.md` by name
+- [x] Write `batman_code/prompts/batman.md`
+  - Terse, imperative, Detective Mode debugging, max 2 sentences
+  - Easter eggs: "why so serious?" → `.`, "who are you?" → "I'm Batman."
+- [x] Write `batman_code/prompts/alfred.md`
+  - Refined British butler, verbose, "If I may, sir...", dry wit
+  - Easter eggs: "where's Bruce?" → "Master Wayne is... indisposed."
+- [x] Write `batman_code/prompts/oracle.md`
+  - Analytical hacker, mission briefing format (Situation/Analysis/Recommended action)
+  - Easter eggs: "birds of prey" → 🙄, security vuln → "Backdoor detected."
+- [x] Write `batman_code/prompts/nightwing.md`
+  - Collaborative, witty, pair programming energy, "we" and "let's"
+  - Easter eggs: Haley's Circus refs, "Stuck the landing! Perfect 10."
+- [x] Write `batman_code/prompts/joker.md`
+  - Chaotic, theatrical, DARK KNIGHT MODE (auto-approve)
+  - Startup warning text defined, roasts bad code dramatically
+  - Easter eggs: "why so serious?" → unhinged semicolons monologue
 
 ---
 
