@@ -55,6 +55,7 @@ COLORS = {
     "tool": "#2d2d4e",  # Dim violet
     "dim": "#6b7280",  # Muted grey
     "user": "#ffffff",  # User text
+    "primary_dev": "#e0a800",  # Darker gold for editable/dev installs
 }
 
 
