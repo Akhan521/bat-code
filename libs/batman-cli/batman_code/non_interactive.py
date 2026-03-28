@@ -35,10 +35,7 @@ from rich.console import Console
 from rich.style import Style
 from rich.text import Text
 
-# DEFERRED IMPORT: These stay as deepagents_cli until Phase 4 creates
-# batman_code/agent.py with create_batman_agent() and DEFAULT_AGENT_NAME.
-# See tasks/deferred-imports.md for the Phase 4 migration plan.
-from deepagents_cli.agent import DEFAULT_AGENT_NAME, create_cli_agent
+from batman_code.agent import DEFAULT_AGENT_NAME, create_batman_agent
 
 from batman_code.config import (
     SHELL_TOOL_NAMES,
@@ -635,9 +632,7 @@ async def run_non_interactive(
             enable_shell = bool(settings.shell_allow_list)
             use_auto_approve = not enable_shell
 
-            # DEFERRED: Uses deepagents_cli.agent until Phase 4 creates
-            # batman_code/agent.py with create_batman_agent().
-            agent, composite_backend = create_cli_agent(
+            agent, composite_backend = create_batman_agent(
                 model=model,
                 assistant_id=assistant_id,
                 tools=tools,

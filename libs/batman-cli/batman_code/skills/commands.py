@@ -17,10 +17,7 @@ from deepagents.middleware.skills import SkillMetadata
 from batman_code.config import COLORS, Settings, console, get_glyphs
 from batman_code.skills.load import list_skills
 
-# DEFERRED IMPORT: These stay as deepagents_cli until Phase 4 creates
-# batman_code/ui.py with the help display functions.
-# See tasks/deferred-imports.md for the Phase 4 migration plan.
-from deepagents_cli.ui import (
+from batman_code.ui import (
     build_help_parent,
     show_skills_create_help,
     show_skills_help,
