@@ -125,26 +125,47 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 4 — Agent Wiring
+## Phase 4 — Agent Wiring — COMPLETE
 
-- [ ] Write `batman_code/agent.py`
-  - Function: `create_batman_agent()` (mirrors `create_cli_agent()`)
-  - Accepts `persona: str` param, loads corresponding `prompts/{persona}.md`
-  - Merges persona prompt into system_prompt.md at call time
-  - Middleware stack: MemoryMiddleware → SkillsMiddleware → LocalContextMiddleware → InterruptOnConfig
-  - If persona is `joker`: set `auto_approve=True` automatically + show warning
-  - Returns `(agent, composite_backend)` tuple same as deepagents_cli
+> Plan: `tasks/phase4-plan.md`
+> 4 commits: config prereq → agent.py → ui.py + input.py → deferred import fixups
 
-- [ ] Write `batman_code/ui.py`
-  - Port from `deepagents_cli/ui.py`
-  - Update `show_help()` with Batman-themed command descriptions
-  - Mode names: DETECTIVE MODE, DARK KNIGHT MODE, THE CAVE, BATCOMPUTER
+- [x] Add `"primary_dev": "#e0a800"` to `COLORS` dict in `config.py`
+  - Prerequisite for `ui.py`'s `show_help()` editable-install banner
 
-- [ ] Write `batman_code/input.py`
-  - Port from `deepagents_cli/input.py`
-  - Add `/batsignal` to recognized slash commands
-  - Command descriptions use Batman terminology
-  - Mode labels: DETECTIVE MODE (manual), DARK KNIGHT MODE (auto-approve)
+- [x] Write `batman_code/agent.py` — port from `deepagents_cli/agent.py`
+  - `DEFAULT_AGENT_NAME = "agent"` (unchanged)
+  - `list_agents()` — `~/.deepagents/` → `~/.bat-code/` in empty-state text
+  - `reset_agent()` — no changes (uses `settings.user_deepagents_dir`)
+  - `get_system_prompt(assistant_id, sandbox_type, persona="batman")` — adds persona injection via `.replace("{persona_instructions}", load_persona(persona))`
+  - Skills path: `~/.deepagents/` → `~/.bat-code/`
+  - `create_batman_agent()` — mirrors `create_cli_agent` + `persona` kwarg
+    - Joker enforcement: `if persona == "joker": auto_approve = True`
+    - Temp dir prefixes: `deepagents_` → `batcode_`
+  - All `deepagents_cli.*` imports → `batman_code.*`
+  - New import: `from batman_code.prompts import load_persona`
+  - All `_format_*_description` and `_add_interrupt_on` helpers ported verbatim
+
+- [x] Write `batman_code/ui.py` — port from `deepagents_cli/ui.py`
+  - Verbatim: `build_help_parent`, `_format_timeout`, `truncate_value`, `format_tool_display`, `format_tool_message_content`
+  - `show_help()`: `deepagents` → `bat-code`, `-a/--agent` → `-p/--persona`, `--auto-approve` → DARK KNIGHT MODE
+  - All `show_*_help()`: `deepagents` → `bat-code`, `~/.deepagents/` → `~/.bat-code/`
+  - All `deepagents_cli.*` imports → `batman_code.*`
+
+- [x] Write `batman_code/input.py` — port from `deepagents_cli/input.py`
+  - Near-direct port: only import paths change
+  - `INPUT_HIGHLIGHT_PATTERN` already matches `/batsignal` generically
+  - No `/batsignal` registration needed (deferred to Phase 7/8)
+
+- [x] Resolve deferred import in `batman_code/non_interactive.py`
+  - `from deepagents_cli.agent import DEFAULT_AGENT_NAME, create_cli_agent`
+    → `from batman_code.agent import DEFAULT_AGENT_NAME, create_batman_agent`
+  - Rename `create_cli_agent(...)` calls → `create_batman_agent(...)`
+
+- [x] Resolve deferred import in `batman_code/skills/commands.py`
+  - `from deepagents_cli.ui import ...` → `from batman_code.ui import ...`
+
+- [x] Update `tasks/deferred-imports.md` — mark all items checked
 
 ---
 

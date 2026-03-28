@@ -1,7 +1,7 @@
-# Deferred Imports — Fix in Phase 4
+# Deferred Imports — RESOLVED (Phase 4 Complete)
 
-Two files retain temporary `deepagents_cli` imports because the target modules
-(`batman_code.agent` and `batman_code.ui`) don't exist yet. Phase 4 creates them.
+Two files retained temporary `deepagents_cli` imports because the target modules
+(`batman_code.agent` and `batman_code.ui`) didn't exist yet. Phase 4 resolved them.
 
 ---
 
@@ -39,8 +39,8 @@ No function renames needed — just the import path change.
 
 ## Checklist
 
-- [ ] Create `batman_code/agent.py` with `create_batman_agent` and `DEFAULT_AGENT_NAME`
-- [ ] Create `batman_code/ui.py` with `build_help_parent`, `show_skills_detail`, `show_skills_list`
-- [ ] Update `non_interactive.py` import
-- [ ] Update `skills/commands.py` import
-- [ ] Verify both modules import cleanly
+- [x] Create `batman_code/agent.py` with `create_batman_agent` and `DEFAULT_AGENT_NAME`
+- [x] Create `batman_code/ui.py` with `build_help_parent`, `show_skills_detail`, `show_skills_list`
+- [x] Update `non_interactive.py` import
+- [x] Update `skills/commands.py` import
+- [x] Verify both modules import cleanly
