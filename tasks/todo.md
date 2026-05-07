@@ -171,9 +171,9 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ## Phase 5 — Core Widgets
 
-- [ ] Port `batman_code/widgets/__init__.py`
+- [x] Port `batman_code/widgets/__init__.py` (incremental — re-exports added per-batch)
 
-- [ ] Write `batman_code/widgets/loading.py`
+- [x] Write `batman_code/widgets/loading.py`
   - Port `LoadingWidget` and `Spinner` from `deepagents_cli/widgets/loading.py`
   - Replace spinner frames with bat-wing animation:
     `["(\\  )", "( \\ )", "(  /)", "( / )"]` in bat-gold color
@@ -185,7 +185,7 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
   - Paused state shows dim bat symbol: `[dim]>==<[/dim]`
   - Elapsed time display kept the same
 
-- [ ] Write `batman_code/widgets/welcome.py`
+- [x] Write `batman_code/widgets/welcome.py`
   - Port `WelcomeBanner` from `deepagents_cli/widgets/welcome.py`
   - Batman ASCII art logo rendered in bat-gold using Rich Text
   - Random welcome message chosen from Gotham-themed list:
@@ -213,7 +213,7 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
   - Option labels: "Authorize" / "Deny" / "Auto-Authorize Session"
   - Border: bat-gold
 
-- [ ] Port `batman_code/widgets/status.py`
+- [x] Port `batman_code/widgets/status.py`
   - Port from `deepagents_cli/widgets/status.py`
   - Mode labels: DETECTIVE MODE / DARK KNIGHT MODE
   - Bash label: THE CAVE
@@ -222,12 +222,12 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
   - DETECTIVE MODE color: `#1a3a5c` (gotham blue)
   - Token counter: bat-gold `#f5c518`
 
-- [ ] Port `batman_code/widgets/diff.py`
-- [ ] Port `batman_code/widgets/tool_widgets.py`
+- [x] Port `batman_code/widgets/diff.py`
+- [x] Port `batman_code/widgets/tool_widgets.py`
   - Update status messages: "Executing in the Cave..." / "Mission complete." / "Operation failed."
-- [ ] Port `batman_code/widgets/tool_renderers.py`
+- [x] Port `batman_code/widgets/tool_renderers.py`
 - [ ] Port `batman_code/widgets/autocomplete.py`
-- [ ] Port `batman_code/widgets/history.py`
+- [x] Port `batman_code/widgets/history.py`
 - [ ] Port `batman_code/widgets/model_selector.py`
 - [ ] Port `batman_code/widgets/thread_selector.py`
 - [ ] Port `batman_code/widgets/message_store.py`
