@@ -196,16 +196,15 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
   - Shows active persona name and thread ID
   - Dims to `#4a4a6a` after initial render (stays visible but not distracting)
 
-- [ ] Port `batman_code/widgets/messages.py`
+- [x] Port `batman_code/widgets/messages.py`
   - Port from `deepagents_cli/widgets/messages.py`
-  - Update display names:
-    - User: **"Gotham Citizen"**
-    - Assistant: persona-specific (e.g., **"The Dark Knight"**, **"Alfred Pennyworth"**)
-    - Tool call: **"Batcomputer Executing"**
-    - Error: **"Villain Detected"**
-    - System: **"Gotham PD Transmission"**
-  - Assistant message border: bat-gold (`#f5c518`)
-  - Error border: dark red (`#8b0000`)
+  - Display-name labels (User: Gotham Citizen, Assistant: persona name,
+    Tool: Batcomputer Executing, System: Gotham PD Transmission) belong
+    to UI surfaces outside this widget (status bar / message metadata)
+  - Error label: **"Villain Detected"** (in-widget) — APPLIED
+  - Assistant message border: bat-gold (`#f5c518`) — APPLIED
+  - Error border: dark red (`$error` Textual var, mapped to `#8b0000`
+    in app.tcss) — already wired
 
 - [ ] Port `batman_code/widgets/approval.py`
   - Port from `deepagents_cli/widgets/approval.py`
