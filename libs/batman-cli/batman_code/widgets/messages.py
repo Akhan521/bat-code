@@ -196,6 +196,7 @@ class AssistantMessage(Vertical):
         height: auto;
         padding: 0 1;
         margin: 1 0 0 0;
+        border-left: wide #f5c518;
     }
 
     AssistantMessage Markdown {
@@ -225,7 +226,9 @@ class AssistantMessage(Vertical):
         yield Markdown("", id="assistant-content")
 
     def on_mount(self) -> None:
-        """Store reference to markdown widget."""
+        """Store reference to markdown widget and set ASCII border fallback."""
+        if _detect_charset_mode() == CharsetMode.ASCII:
+            self.styles.border_left = ("ascii", "#f5c518")
         self._markdown = self.query_one("#assistant-content", Markdown)
 
     def _get_markdown(self) -> Markdown:
@@ -1218,7 +1221,7 @@ class ErrorMessage(Static):
         # Store raw content for serialization
         self._content = error
         # Use Text object to combine styled prefix with unstyled error content
-        text = Text("Error: ", style="bold red")
+        text = Text("Villain Detected: ", style="bold red")
         text.append(error)
         super().__init__(text, **kwargs)
 
