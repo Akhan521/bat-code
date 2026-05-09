@@ -165,11 +165,12 @@ class ApprovalMenu(Container):
             Widgets for title, tool info, options, and help text.
         """
         # Title - show count if multiple tools
+        # Batman theming: "Gotham Requires Authorization" replaces generic title
         count = len(self._action_requests)
         if count == 1:
-            title = f">>> {self._tool_names[0]} Requires Approval <<<"
+            title = f"⚠ Gotham Requires Authorization: {self._tool_names[0]}"
         else:
-            title = f">>> {count} Tool Calls Require Approval <<<"
+            title = f"⚠ Gotham Requires Authorization: {count} Tool Calls"
         yield Static(title, classes="approval-title")
 
         # For shell commands, show the command (expandable if long)
@@ -202,7 +203,7 @@ class ApprovalMenu(Container):
         glyphs = get_glyphs()
         help_text = (
             f"{glyphs.arrow_up}/{glyphs.arrow_down} navigate {glyphs.bullet} "
-            f"Enter select {glyphs.bullet} y/n/a quick keys {glyphs.bullet} Esc reject"
+            f"Enter select {glyphs.bullet} y/n/a quick keys {glyphs.bullet} Esc deny"
         )
         if self._has_expandable_command:
             help_text += f" {glyphs.bullet} e expand"
@@ -244,18 +245,20 @@ class ApprovalMenu(Container):
 
     def _update_options(self) -> None:
         """Update option widgets based on selection."""
+        # Batman theming: "Authorize" / "Deny" / "Auto-Authorize Session"
+        # replaces generic "Approve" / "Reject" / "Auto-approve" labels.
         count = len(self._action_requests)
         if count == 1:
             options = [
-                "1. Approve (y)",
-                "2. Reject (n)",
-                "3. Auto-approve for this thread (a)",
+                "1. Authorize (y)",
+                "2. Deny (n)",
+                "3. Auto-Authorize Session (a)",
             ]
         else:
             options = [
-                f"1. Approve all {count} (y)",
-                f"2. Reject all {count} (n)",
-                "3. Auto-approve for this thread (a)",
+                f"1. Authorize all {count} (y)",
+                f"2. Deny all {count} (n)",
+                "3. Auto-Authorize Session (a)",
             ]
 
         for i, (text, widget) in enumerate(
