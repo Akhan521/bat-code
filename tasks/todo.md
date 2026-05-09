@@ -206,11 +206,16 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
   - Error border: dark red (`$error` Textual var, mapped to `#8b0000`
     in app.tcss) — already wired
 
-- [ ] Port `batman_code/widgets/approval.py`
+- [x] Port `batman_code/widgets/approval.py`
   - Port from `deepagents_cli/widgets/approval.py`
-  - Title prefix: "⚠ Gotham Requires Authorization"
-  - Option labels: "Authorize" / "Deny" / "Auto-Authorize Session"
-  - Border: bat-gold
+  - Title prefix: "⚠ Gotham Requires Authorization" — APPLIED
+    (single: "...: {tool_name}"; multi: "...: {count} Tool Calls")
+  - Option labels: "Authorize" / "Deny" / "Auto-Authorize Session" — APPLIED
+    (singular and plural forms both themed)
+  - Help text: "Esc reject" → "Esc deny" for label consistency
+  - Border: bat-gold (`#f5c518`) — already in app.tcss line 62, no change
+  - Kept as deep import (not re-exported from `widgets/__init__.py`)
+    per source convention
 
 - [x] Port `batman_code/widgets/status.py`
   - Port from `deepagents_cli/widgets/status.py`
