@@ -230,7 +230,16 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 - [x] Port `batman_code/widgets/tool_widgets.py`
   - Update status messages: "Executing in the Cave..." / "Mission complete." / "Operation failed."
 - [x] Port `batman_code/widgets/tool_renderers.py`
-- [ ] Port `batman_code/widgets/autocomplete.py`
+- [x] Port `batman_code/widgets/autocomplete.py`
+  - Pure verbatim port — content-identical to source (zero `deepagents_cli`
+    imports, no Batman theming surface). Pure stdlib + Textual.
+  - Provides @ file-mention + / slash-command completion via the
+    `CompletionController` protocol. Ships SlashCommandController,
+    FuzzyFileController (aliased PathCompletionController), and
+    MultiCompletionManager dispatcher.
+  - `/batsignal` NOT added to `SLASH_COMMANDS` yet — handler lands in
+    Phase 7 alongside the widget.
+  - Kept as deep import (not re-exported from `widgets/__init__.py`).
 - [x] Port `batman_code/widgets/history.py`
 - [ ] Port `batman_code/widgets/model_selector.py`
 - [ ] Port `batman_code/widgets/thread_selector.py`
