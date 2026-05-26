@@ -242,7 +242,25 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
   - Kept as deep import (not re-exported from `widgets/__init__.py`).
 - [x] Port `batman_code/widgets/history.py`
 - [ ] Port `batman_code/widgets/model_selector.py`
-- [ ] Port `batman_code/widgets/thread_selector.py`
+- [x] Port `batman_code/widgets/thread_selector.py`
+  - Verbatim port (545 LOC, leaf): only `deepagents_cli.*` imports remapped
+    to `batman_code.*`. Provides `ThreadSelectorScreen` (ModalScreen) +
+    `ThreadOption` (Static) for the `/threads` command.
+  - Gotham theming APPLIED:
+    - Title: "Select Thread" → "Case Files" (with "active: ..." variant
+      when a current thread is set).
+    - Loading state: "Pulling case files from the Batcomputer..."
+    - Empty state: "No case files on record"
+    - Error state: "Case files unreachable: ..."
+    - Active option marker: "(current)" → "(active)" for wording consistency
+      with the title.
+  - Column headers (Thread / Agent / Msgs / Updated) kept functional —
+    they're data labels, not chrome.
+  - Tests: 15 unit tests in `tests/widgets/test_thread_selector.py`
+    covering `_format_header`, `_format_option_label`, `_build_title`
+    (plain / current-only / linked Rich Text). All pass.
+  - Kept as deep import (not re-exported from `widgets/__init__.py`) per
+    source convention.
 - [ ] Port `batman_code/widgets/message_store.py`
 - [ ] Port `batman_code/widgets/chat_input.py`
 
