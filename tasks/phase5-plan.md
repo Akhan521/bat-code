@@ -1,157 +1,227 @@
-# Phase 5 — Core Widgets — Implementation Plan
+# Phase 5 — Core Widgets — Consolidated Plan
 
-## Context
+This is the single source of truth for Phase 5 (porting 14 widgets from
+`libs/cli/deepagents_cli/widgets/` → `libs/batman-cli/batman_code/widgets/`).
+Supersedes the earlier `phase5-plan.md` (batch 1) and `phase5b-plan.md`
+(batch 2), which were session-scoped.
 
-Phase 5 ports 14 widget files from `libs/cli/deepagents_cli/widgets/` → `libs/batman-cli/batman_code/widgets/`. Phases 0-4 are complete; the agent layer (`agent.py`, `ui.py`, `input.py`) is wired and verified. Phase 5 is the largest phase by file count, so it spans **multiple sessions**.
-
-**This session lands the first 3 widgets.** All three are leaf widgets (zero `widgets.*` internal dependencies), so they can be ported, verified, and committed independently without half-finished imports. They're also the highest-impact / lowest-risk picks: once Phase 8 wires `app.py`, the user immediately sees the bat-spinner, Gotham welcome, and DETECTIVE / DARK KNIGHT mode indicator working together.
-
-**Out of scope for this session, deferred to future Phase 5 sessions:**
-- `messages.py` (1,257 LOC) + `diff.py` (its dependency) — large, central, deserves a dedicated session.
-- Approval chain: `approval.py` → `tool_renderers.py` → `tool_widgets.py`
-- Input chain: `chat_input.py` → `autocomplete.py` + `history.py`
-- Standalone selectors / store: `model_selector.py`, `thread_selector.py`, `message_store.py`
+Phase 5 spans multiple sessions. Status here is **authoritative**; the
+matching one-liners in `tasks/todo.md` and the per-widget memory notes in
+`MEMORY.md` track the same state from different angles.
 
 ---
 
-## Files to Create / Modify (this session)
+## Scope — all 14 widgets
 
-| File | Action | Source | Source LOC |
-|------|--------|--------|-----------|
-| `batman_code/widgets/loading.py` | NEW | `deepagents_cli/widgets/loading.py` | 173 |
-| `batman_code/widgets/welcome.py` | NEW | `deepagents_cli/widgets/welcome.py` | 134 |
-| `batman_code/widgets/status.py` | NEW | `deepagents_cli/widgets/status.py` | 277 |
-| `batman_code/widgets/__init__.py` | UPDATE | mirror source export shape, but only export ported classes | currently 1 line |
+| # | Widget | LOC | Internal deps | Status | Notes |
+|---|--------|-----|---------------|--------|-------|
+| 1 | `loading.py` | 173 | none | **DONE** (batch 1) | Bat-wing spinner, Gotham status rotation |
+| 2 | `welcome.py` | 134 | none | **DONE** (batch 1) | Gotham welcome pool, bat-code utm_source |
+| 3 | `status.py` | 277 | none | **DONE** (batch 1) | DETECTIVE / DARK KNIGHT, THE CAVE / BATCOMPUTER labels |
+| 4 | `history.py` | 155 | none | **DONE** (batch 2) | Chat-input history (verbatim) |
+| 5 | `diff.py` | 216 | none | **DONE** (batch 2) | Unified diff (verbatim — diff tints are universal, not branding) |
+| 6 | `tool_widgets.py` | 245 | none | **DONE** (batch 2) | Tool-approval widgets (verbatim) |
+| 7 | `tool_renderers.py` | 128 | `tool_widgets` | **DONE** (batch 2) | Renderer registry (verbatim) |
+| 8 | `messages.py` | 1258 | `diff` | **DONE** (batch 3) | "Villain Detected" error label; bat-gold assistant border |
+| 9 | `approval.py` | 331 | `tool_renderers` | **DONE** (batch 4) | "Gotham Requires Authorization" title; Authorize/Deny/Auto-Authorize labels |
+| 10 | `autocomplete.py` | 630 | none | **DONE** (batch 5) | Verbatim — slash commands are functional IDs, no theming surface |
+| 11 | `thread_selector.py` | 545 | none | **DONE** (batch 6) | "Case Files" / "(active)" theming + 15 unit tests |
+| 12 | `message_store.py` | 580 | none | pending | Likely pure verbatim (storage layer) |
+| 13 | `model_selector.py` | 630 | none | pending | Likely has user-facing labels (model picker title) |
+| 14 | `chat_input.py` | 749 | `history` + `autocomplete` + `messages` | pending | Biggest theming surface ("Gotham Citizen" prompt label, etc.) |
 
----
-
-## Per-Widget Theming Decisions
-
-### `loading.py`
-- **Spinner frames**: Hardcoded `("( \\  )", "(  \\ )", "(  / )", "( /  )")` bat-wing flutter directly in the widget (do not modify `Glyphs.spinner_frames` in config; the unicode glyph set retains its Braille spinner for any other potential consumers).
-- **Spinner color**: Replace hardcoded `[#FFD800]` with `COLORS["bat_gold"]` (`#f5c518`).
-- **Status messages rotate every 5s** through Gotham pool:
-  - "Analyzing with the Batcomputer"
-  - "Consulting the case files"
-  - "Scanning Gotham"
-  - "Running forensics"
-- **Default status**: First message in the rotation (`"Analyzing with the Batcomputer"`) instead of `"Thinking"`.
-- **Paused state**: `[dim]>==<[/dim]` using compact bat-symbol from `get_glyphs().bat_symbol` (`>==|==<`) — keep verbatim but render dim.
-- **Elapsed-time / pause / resume / stop**: verbatim port.
-
-### `welcome.py`
-- **Banner**: Reuse `get_banner()` (already returns BAT CODE ASCII art from config).
-- **Welcome message**: Random pick from Gotham pool replaces `"Ready to code! What would you like to build?"`:
-  - "Gotham needs you."
-  - "The night is darkest just before the dawn."
-  - "I am vengeance."
-  - "The Batcomputer is online."
-- **LangSmith utm_source**: `?utm_source=deepagents-cli` → `?utm_source=bat-code` (2 occurrences).
-- **Bottom hint line**: keep verbatim (`Enter send • Ctrl+J newline • @ files • / commands`).
-- **Persona display**: NOT shown in welcome banner this session (welcome.py source doesn't take persona; persona display will land with `app.py` in Phase 8 or via a small follow-up if needed). Plan doc for that session can add it.
-
-### `status.py`
-- **Mode labels** (`watch_mode`):
-  - `"bash"` mode: indicator text `"BASH"` → `"THE CAVE"`
-  - `"command"` mode: indicator text `"CMD"` → `"BATCOMPUTER"`
-- **Auto-approve labels** (`watch_auto_approve`):
-  - On: `"auto | shift+tab to cycle"` → `"DARK KNIGHT MODE | shift+tab to cycle"`
-  - Off: `"manual | shift+tab to cycle"` → `"DETECTIVE MODE | shift+tab to cycle"`
-- **CSS color overrides** (in `DEFAULT_CSS`):
-  - `.status-mode.bash` background `#ff1493` → `#1a3a5c` (gotham_blue) — THE CAVE feels like a bat-cave, not pink.
-  - `.status-mode.command` background `#8b5cf6` → `#2d2d4e` (tool/violet) — BATCOMPUTER stays slightly violet.
-  - `.status-auto-approve.on` background `#10b981` (green) → `#8b0000` (error red, danger) — DARK KNIGHT MODE is dangerous.
-  - `.status-auto-approve.off` background `#f59e0b` (amber) → `#1a3a5c` (gotham_blue) — DETECTIVE MODE is calm.
-  - Token color: append `color: #f5c518` to `.status-tokens` for bat-gold counter.
-- **Everything else** (counters, key handlers, refresh logic, watchers): verbatim.
-
-### `widgets/__init__.py`
-After all 3 widgets land, update from:
-```python
-"""bat-code UI widgets."""
-```
-to:
-```python
-"""bat-code UI widgets."""
-
-from __future__ import annotations
-
-from batman_code.widgets.loading import LoadingWidget, Spinner
-from batman_code.widgets.status import StatusBar
-from batman_code.widgets.welcome import WelcomeBanner
-
-__all__ = ["LoadingWidget", "Spinner", "StatusBar", "WelcomeBanner"]
-```
-The remaining source exports (`AppMessage`, `AssistantMessage`, `ChatInput`, `DiffMessage`, `ErrorMessage`, `ToolCallMessage`, `UserMessage`) will be added in subsequent Phase 5 sessions.
+**Done:** 11 / 14 (~4,092 LOC). **Remaining:** 3 / 14 (~1,959 LOC).
 
 ---
 
-## Import Remapping (applies to all 3 files)
+## Conventions established during Phase 5
+
+Apply these to every remaining widget port:
+
+### 1. Commit style (per `feedback_commit_style.md`)
+
+- **Pure verbatim port** (no theming, no theming-tests): 1 commit —
+  `feat(batman-cli): port <widget>.py (verbatim)`.
+- **Verbatim port with theming**: split into 2+ commits — `feat: port` then
+  `feat: theme` then `test: cover ...` then `docs: mark complete`. One
+  concern per commit so review and rollback stay surgical.
+- **Test infra changes**: separate `chore` commit
+  (e.g., `chore(batman-cli): add pytest dev group + tests/ scaffold`).
+
+### 2. Test-alongside policy (per `feedback_always_test.md` / `lessons.md`)
+
+Every port ships pytest unit tests **in the same workstream**.
+- Cover pure-logic helpers (formatters, label builders, parsers, state
+  transitions). Skip Textual layout — covered indirectly by the import
+  smoke test plus Phase 10 end-to-end verification.
+- Theming changes get **explicit assertions** on themed strings, plus a
+  regression guard against upstream wording.
+- Run with `cd libs/batman-cli && uv run --group dev pytest`.
+
+### 3. `widgets/__init__.py` re-export rule
+
+Source's `widgets/__init__.py` re-exports the message/chat surface only.
+Mirror that:
+- **Re-exported** (used as `from batman_code.widgets import X`):
+  `AppMessage`, `AssistantMessage`, `DiffMessage`, `ErrorMessage`,
+  `LoadingWidget`, `Spinner`, `StatusBar`, `ToolCallMessage`,
+  `UserMessage`, `WelcomeBanner`.
+- **Deep import only** (selectors, approvals, controllers): `approval.py`,
+  `autocomplete.py`, `thread_selector.py`, eventually `model_selector.py`,
+  `chat_input.py`, `message_store.py`. Import as
+  `from batman_code.widgets.<name> import <X>`.
+- `FormattedOutput` and `QueuedUserMessage` stay internal — match source.
+
+### 4. Import remapping (all widgets)
 
 | Source | Batman |
 |--------|--------|
-| `from deepagents_cli.config import COLORS, _is_editable_install, fetch_langsmith_project_url, get_banner, get_glyphs, get_langsmith_project_name` | `from batman_code.config import ...` |
-| `from deepagents_cli.config import settings` | `from batman_code.config import settings` |
-| `from deepagents_cli.config import get_glyphs` | `from batman_code.config import get_glyphs` |
+| `from deepagents_cli.config import ...` | `from batman_code.config import ...` |
+| `from deepagents_cli.sessions import ...` | `from batman_code.sessions import ...` |
+| `from deepagents_cli._version import ...` | `from batman_code._version import ...` |
+| `from deepagents_cli.widgets.X import ...` | `from batman_code.widgets.X import ...` |
 
-Textual / Rich / stdlib imports stay unchanged.
+Textual / Rich / stdlib imports stay unchanged. Run `grep -r "deepagents_cli"
+libs/batman-cli/` after each port — must return zero hits.
+
+### 5. Theming guidance (when to theme, when not to)
+
+- **Theme**: screen titles, prompt labels, mode indicators, loading/empty/
+  error states, status-bar mode names, anything narrative-facing.
+- **Don't theme**: column headers (data labels), key bindings, functional
+  identifiers (slash command names, tool names, file paths, error codes),
+  universal diff tints (`#2d1515` / `#152d15` etc — they're conventions, not
+  branding).
+- When in doubt: ask "is this chrome or content?" Chrome stays functional;
+  content gets the Gotham voice.
 
 ---
 
-## Commit Strategy (matches user's small-commit preference)
+## Completed batches — commit log
 
-4 commits, each independently verifiable:
+### Batch 1 — Foundational chrome (3 widgets)
 
-1. `docs: add tasks/phase5-plan.md` — this file.
-2. `feat(batman-cli): port loading.py with bat-wing spinner` — file 1 + smoke test.
-3. `feat(batman-cli): port welcome.py with Gotham banner` — file 2 + smoke test.
-4. `feat(batman-cli): port status.py with DETECTIVE/DARK KNIGHT modes` — file 3 + `__init__.py` re-exports + smoke test.
+Plan was the original `phase5-plan.md` (now superseded by this doc).
 
-Per user preference: pause for approval before each commit; commit only when user asks.
+- `d18c9cd` feat: port loading.py — bat-wing spinner, 4-message Gotham
+  status rotation (5s), bat-gold color, `[dim]>==<[/dim]` paused state
+- `8cfaa2a` feat: port welcome.py — random Gotham welcome pool, bat-code
+  utm_source for LangSmith
+- `283fd2f` feat: port status.py — DETECTIVE / DARK KNIGHT MODE labels,
+  THE CAVE / BATCOMPUTER mode labels, bat-gold token counter
+
+### Batch 2 — Verbatim leaf ports (4 widgets)
+
+Plan was the original `phase5b-plan.md` (now superseded by this doc).
+
+- `9f981d4` feat: port history.py — chat-input HistoryManager (JSON-lines,
+  append-only)
+- `f6ed20c` feat: port diff.py — format_diff_textual + EnhancedDiff
+  (universal +/- tints kept verbatim)
+- `589b400` feat: port tool_widgets.py — ToolApprovalWidget base +
+  Generic/WriteFile/EditFile widgets
+- `abc5f2c` feat: port tool_renderers.py + widgets re-exports — get_renderer()
+  registry (write_file, edit_file)
+
+### Batch 3 — `messages.py` (1 widget, split per commit-style)
+
+- `61038f4` feat: port messages.py — 1258-LOC port: UserMessage,
+  QueuedUserMessage, AssistantMessage, ToolCallMessage, DiffMessage,
+  ErrorMessage, AppMessage + FormattedOutput dataclass + tool-output
+  formatter dispatch (todos / ls / file / search / shell / web / task)
+- `01728dc` feat: apply Batman theming to messages.py — ErrorMessage
+  label "Villain Detected:", AssistantMessage bat-gold (#f5c518) wide
+  border-left with ASCII fallback
+
+### Batch 4 — `approval.py` (1 widget, split per commit-style)
+
+- `69b62ea` feat: port approval.py — 331-LOC port: ApprovalMenu HITL
+  Container with focus-trapped key bindings (y/n/a quick keys, arrow nav,
+  Enter select, e to expand long shell commands), three options, tool-renderer
+  dispatch via `get_renderer()` for non-shell tools, minimal display for
+  shell tools (command shown inline, truncated > 120 chars)
+- `2d2c48c` feat: apply Batman theming to approval.py — title prefix
+  "Gotham Requires Authorization: {tool/count}", option labels Authorize/
+  Deny/Auto-Authorize Session (singular and plural), help text "Esc deny"
+
+### Batch 5 — `autocomplete.py` (1 widget, pure verbatim)
+
+- `0046a66` feat: port autocomplete.py — 630-LOC: CompletionResult enum,
+  CompletionView + CompletionController Protocols, SLASH_COMMANDS list
+  (12 entries), SlashCommandController, FuzzyFileController (git ls-files
+  with glob fallback, fuzzy scoring via SequenceMatcher; aliased as
+  PathCompletionController for backwards compat), MultiCompletionManager
+  dispatcher. Content-identical to source — `/batsignal` intentionally NOT
+  added to SLASH_COMMANDS (handler + widget land together in Phase 7).
+
+### Batch 6 — `thread_selector.py` (1 widget, split + test infra + lessons)
+
+- `012fae8` feat: port thread_selector.py (verbatim) — 545-LOC port:
+  ThreadSelectorScreen (ModalScreen) + ThreadOption (Static) for /threads
+- `e051a3a` chore: add pytest dev group + tests/ scaffold —
+  [dependency-groups.dev] pytest + pytest-asyncio,
+  [tool.pytest.ini_options] testpaths=['tests'] asyncio_mode='auto'
+- `de14a3c` docs: capture testing lesson learned — tasks/lessons.md
+- `2e91bad` test: cover thread_selector.py ported logic — 15 unit tests
+- `47ee297` feat: apply Gotham case-file theming — title "Case Files"
+  (active: ...), "Pulling case files from the Batcomputer...", "No case
+  files on record", "Case files unreachable: ...", "(current)" → "(active)"
 
 ---
 
-## Verification
+## Remaining work (3 widgets)
 
-After each widget lands, from `libs/batman-cli/`:
+Recommended order (smallest leaf first → biggest dep last):
 
-```bash
-# Import smoke test (per widget)
-uv run python -c "from batman_code.widgets.loading import LoadingWidget, Spinner; print('loading OK')"
-uv run python -c "from batman_code.widgets.welcome import WelcomeBanner; print('welcome OK')"
-uv run python -c "from batman_code.widgets.status import StatusBar; print('status OK')"
+1. **`message_store.py`** (580 LOC, leaf) — likely pure verbatim (storage
+   layer, no UI surface). Expected: 1 port commit + 1 test commit.
+2. **`model_selector.py`** (630 LOC, leaf) — likely has user-facing labels
+   (model picker title). Expected: port + theming + tests = 3+ commits.
+3. **`chat_input.py`** (749 LOC, depends on `history` + `autocomplete` +
+   `messages` — all ported). Biggest theming surface ("Gotham Citizen"
+   prompt label, etc.). Expected: port + theming + tests = 3+ commits.
 
-# After __init__.py update — re-exports work
-uv run python -c "from batman_code.widgets import LoadingWidget, WelcomeBanner, StatusBar; print('init OK')"
+Per user preference: **wait for explicit user approval before starting any
+of these.**
 
-# Lint
-uv run ruff check batman_code/widgets/loading.py batman_code/widgets/welcome.py batman_code/widgets/status.py
+---
 
-# Confirm theming constants resolve
-uv run python -c "from batman_code.config import COLORS; assert COLORS['bat_gold'] == '#f5c518'; assert COLORS['gotham_blue'] == '#1a3a5c'; assert COLORS['error'] == '#8b0000'; print('palette OK')"
+## Verification recipe (per widget)
+
+From `libs/batman-cli/`:
+
+```powershell
+# 1. Import smoke test
+uv run python -c "from batman_code.widgets.<name> import <Class>; print('<name> OK')"
+
+# 2. Re-exports (if updated)
+uv run python -c "from batman_code.widgets import <Class>; print('init OK')"
+
+# 3. Zero deepagents_cli references
+grep -r "deepagents_cli" libs/batman-cli/   # must be empty
+
+# 4. Unit tests
+uv run --group dev pytest tests/widgets/test_<name>.py -v
+
+# 5. Full suite (regression guard)
+uv run --group dev pytest
 ```
 
-Visual verification deferred until Phase 8 (`app.py`) wires these into a runnable Textual app — same pattern used for Phase 4.
+Full visual verification deferred to Phase 10 once `app.py` (Phase 8)
+wires everything into `BatmanApp`.
 
 ---
 
-## Risks / Notes
-
-1. **`Glyphs.spinner_frames` (UNICODE) is Braille, not bat-wing.** Decision: hardcode bat-wing frames in `loading.py` rather than mutate config. Keeps phase scope tight; config can be revisited later if other consumers need glyph parity.
-2. **Status message rotation is a NEW feature** not in source `loading.py`. Implemented via a second `set_interval` (5s) that advances a rotation index and calls `set_status`. Resets the index on `pause` / `resume` / `set_status` so caller-set status sticks.
-3. **Welcome banner is post-splash header.** It coexists with `batcave.py`'s splash (Phases 6a/6b). Keep welcome compact; the cinematic ASCII lives in batcave, not here.
-4. **`__init__.py` partial export.** Only exports the 4 names that exist after this session. The full source has 9. Subsequent Phase 5 sessions extend the export list.
-
----
-
-## Critical Files Reference
+## Critical file references
 
 | File | Role |
 |------|------|
-| `libs/cli/deepagents_cli/widgets/loading.py` | Source for `loading.py` |
-| `libs/cli/deepagents_cli/widgets/welcome.py` | Source for `welcome.py` |
-| `libs/cli/deepagents_cli/widgets/status.py` | Source for `status.py` |
-| `libs/cli/deepagents_cli/widgets/__init__.py` | Source for export shape reference |
 | `libs/batman-cli/batman_code/config.py` | `COLORS`, `get_banner`, `get_glyphs`, `_is_editable_install`, LangSmith helpers, `settings` |
-| `libs/batman-cli/batman_code/app.tcss` | Existing Batman palette CSS (no changes expected this session) |
-| `tasks/todo.md` | Phase 5 checklist (lines 172-235) |
+| `libs/batman-cli/batman_code/app.tcss` | Batman palette CSS (occasional CSS additions per widget) |
+| `libs/batman-cli/batman_code/widgets/__init__.py` | Re-export surface (message/chat classes only) |
+| `libs/batman-cli/batman_code/sessions.py` | `ThreadInfo`, `format_timestamp`, `list_threads` (used by selectors) |
+| `libs/batman-cli/tests/` | pytest suite, mirrors `batman_code/` layout |
+| `tasks/todo.md` | Phase 5 checklist (lines 172-end) — kept in sync per commit |
+| `tasks/lessons.md` | Standing rules captured from user corrections |
+| `tasks/deferred.md` | Punted work (Phase 7 batsignal, easter eggs, approval.py Esc gap) |
+| `CLAUDE.md` | Project vision and spec |
