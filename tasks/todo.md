@@ -69,7 +69,8 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 > Near-direct ports from `libs/cli/deepagents_cli/` with Batman naming.
 > All `deepagents_cli.*` imports remapped to `batman_code.*`.
 > SDK imports (`deepagents.*`) kept as-is.
-> Two deferred imports remain until Phase 4 — see `tasks/deferred-imports.md`.
+> Two deferred imports remained until Phase 4 — resolved in commit 8842309; the
+> tracking doc was removed once closed (see git history / archive).
 
 - [x] Port `batman_code/model_config.py` from `deepagents_cli/model_config.py`
   - Rename internal references from `deepagents` → `batman_code`
@@ -165,7 +166,9 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 - [x] Resolve deferred import in `batman_code/skills/commands.py`
   - `from deepagents_cli.ui import ...` → `from batman_code.ui import ...`
 
-- [x] Update `tasks/deferred-imports.md` — mark all items checked
+- [x] Close out deferred-imports tracking — all items resolved (the standalone
+  `tasks/deferred-imports.md` was kept while items were open and removed in
+  the Phase 5 docs cleanup once fully closed)
 
 ---
 
