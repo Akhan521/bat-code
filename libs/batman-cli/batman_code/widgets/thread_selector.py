@@ -200,14 +200,14 @@ class ThreadSelectorScreen(ModalScreen[str | None]):
             Plain string or Rich `Text` with an embedded hyperlink.
         """
         if not self._current_thread:
-            return "Select Thread"
+            return "Case Files"
         if thread_url:
             return Text.assemble(
-                "Select Thread (current: ",
+                "Case Files (active: ",
                 (self._current_thread, Style(color="cyan", link=thread_url)),
                 ")",
             )
-        return f"Select Thread (current: {self._current_thread})"
+        return f"Case Files (active: {self._current_thread})"
 
     def compose(self) -> ComposeResult:
         """Compose the screen layout.
@@ -225,7 +225,7 @@ class ThreadSelectorScreen(ModalScreen[str | None]):
 
             with VerticalScroll(classes="thread-list"):
                 yield Static(
-                    "[dim]Loading threads...[/dim]",
+                    "[dim]Pulling case files from the Batcomputer...[/dim]",
                     classes="thread-empty",
                     id="thread-loading",
                 )
@@ -320,7 +320,7 @@ class ThreadSelectorScreen(ModalScreen[str | None]):
             await scroll.remove_children()
             await scroll.mount(
                 Static(
-                    f"[red]Failed to load threads: {detail}. Press Esc to close.[/red]",
+                    f"[red]Case files unreachable: {detail}. Press Esc to close.[/red]",
                     classes="thread-empty",
                 )
             )
@@ -340,7 +340,7 @@ class ThreadSelectorScreen(ModalScreen[str | None]):
         if not self._threads:
             await scroll.mount(
                 Static(
-                    "[dim]No threads found[/dim]",
+                    "[dim]No case files on record[/dim]",
                     classes="thread-empty",
                 )
             )
@@ -421,7 +421,7 @@ class ThreadSelectorScreen(ModalScreen[str | None]):
             f"  {msgs:>{_COL_MSGS}}  {timestamp}"
         )
         if current:
-            label += " [dim](current)[/dim]"
+            label += " [dim](active)[/dim]"
         return label
 
     def _move_selection(self, delta: int) -> None:

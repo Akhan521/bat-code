@@ -79,13 +79,16 @@ def test_format_option_label_marks_current_thread() -> None:
     label = ThreadSelectorScreen._format_option_label(
         _make_thread(), selected=False, current=True
     )
-    assert "(current)" in label
+    # Themed: "active" replaces upstream "current" for Gotham consistency.
+    assert "(active)" in label
 
 
 def test_format_option_label_omits_current_marker_for_non_current() -> None:
     label = ThreadSelectorScreen._format_option_label(
         _make_thread(), selected=False, current=False
     )
+    assert "(active)" not in label
+    # Also guard against accidental regression to the upstream wording.
     assert "(current)" not in label
 
 
@@ -129,17 +132,20 @@ def test_format_option_label_renders_message_count() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_build_title_no_current_thread_returns_plain_string() -> None:
+def test_build_title_no_current_thread_uses_gotham_label() -> None:
     screen = ThreadSelectorScreen()
     title = screen._build_title()
-    assert title == "Select Thread"
+    assert title == "Case Files"
+    # Guard against regression to upstream wording.
+    assert "Select Thread" not in title
 
 
 def test_build_title_with_current_thread_no_url() -> None:
     screen = ThreadSelectorScreen(current_thread="abc-123")
     title = screen._build_title()
     assert isinstance(title, str)
-    assert "Select Thread" in title
+    assert "Case Files" in title
+    assert "active:" in title
     assert "abc-123" in title
 
 
@@ -149,7 +155,8 @@ def test_build_title_with_url_returns_rich_text_with_link() -> None:
     title = screen._build_title(thread_url=url)
     assert isinstance(title, Text)
     plain = title.plain
-    assert "Select Thread" in plain
+    assert "Case Files" in plain
+    assert "active:" in plain
     assert "abc-123" in plain
     # The link should be attached to the thread-id span.
     assert any(getattr(span.style, "link", None) == url for span in title.spans)
