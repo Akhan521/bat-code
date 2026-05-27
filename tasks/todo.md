@@ -264,7 +264,19 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
     (plain / current-only / linked Rich Text). All pass.
   - Kept as deep import (not re-exported from `widgets/__init__.py`) per
     source convention.
-- [ ] Port `batman_code/widgets/message_store.py`
+- [x] Port `batman_code/widgets/message_store.py` (verbatim — storage layer, no UI surface)
+  - Two-line import remap only: `deepagents_cli.widgets.messages` →
+    `batman_code.widgets.messages` (lazy imports inside `MessageData.to_widget`
+    and `.from_widget`).
+  - No Gotham theming (no narrative surface — pure data layer for chat
+    virtualization).
+  - Tests: 47 unit tests in `tests/widgets/test_message_store.py` covering
+    enum values, `MessageData` validation/defaults, `MessageStore`
+    append/lookup/update gating, window/prune/hydrate math, scroll-based
+    `should_hydrate_above` / `should_prune_below` heuristics, and clear.
+    All 62 pass (47 new + 15 thread_selector).
+  - Kept as deep import (not re-exported from `widgets/__init__.py`) per
+    source convention.
 - [ ] Port `batman_code/widgets/chat_input.py`
 
 ---

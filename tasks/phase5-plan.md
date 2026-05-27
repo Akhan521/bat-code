@@ -26,11 +26,11 @@ matching one-liners in `tasks/todo.md` and the per-widget memory notes in
 | 9 | `approval.py` | 331 | `tool_renderers` | **DONE** (batch 4) | "Gotham Requires Authorization" title; Authorize/Deny/Auto-Authorize labels |
 | 10 | `autocomplete.py` | 630 | none | **DONE** (batch 5) | Verbatim — slash commands are functional IDs, no theming surface |
 | 11 | `thread_selector.py` | 545 | none | **DONE** (batch 6) | "Case Files" / "(active)" theming + 15 unit tests |
-| 12 | `message_store.py` | 580 | none | pending | Likely pure verbatim (storage layer) |
+| 12 | `message_store.py` | 580 | none | **DONE** (batch 7) | Pure verbatim (storage layer) + 47 unit tests |
 | 13 | `model_selector.py` | 630 | none | pending | Likely has user-facing labels (model picker title) |
 | 14 | `chat_input.py` | 749 | `history` + `autocomplete` + `messages` | pending | Biggest theming surface ("Gotham Citizen" prompt label, etc.) |
 
-**Done:** 11 / 14 (~4,092 LOC). **Remaining:** 3 / 14 (~1,959 LOC).
+**Done:** 12 / 14 (~4,672 LOC). **Remaining:** 2 / 14 (~1,379 LOC).
 
 ---
 
@@ -154,6 +154,25 @@ Plan was the original `phase5b-plan.md` (now superseded by this doc).
   dispatcher. Content-identical to source — `/batsignal` intentionally NOT
   added to SLASH_COMMANDS (handler + widget land together in Phase 7).
 
+### Batch 7 — `message_store.py` (1 widget, pure verbatim + tests)
+
+- `c59b94c` feat: port message_store.py (verbatim) — 580-LOC port:
+  `MessageType` / `ToolStatus` StrEnums, `MessageData` dataclass with
+  `__post_init__` validation (TOOL requires `tool_name`) and lazy
+  `to_widget`/`from_widget` round-trip helpers, `MessageStore` with sliding
+  visible window, active-message protection during prune, update_message
+  allowlist gating, scroll-based `should_hydrate_above` /
+  `should_prune_below` heuristics. Only changes vs source: the two lazy
+  `from deepagents_cli.widgets.messages import ...` statements →
+  `from batman_code.widgets.messages import ...`. No Gotham theming (pure
+  data layer, no UI surface). Kept as deep import per source convention.
+- `2fbc824` test: cover message_store.py ported logic — 47 unit tests in
+  `tests/widgets/test_message_store.py` covering enum values, MessageData
+  defaults + validation, MessageStore append/lookup/update gating,
+  window/prune/hydrate math, scroll-based heuristics, and clear. Skips
+  `to_widget`/`from_widget` (Textual widget construction — covered by
+  import smoke test + Phase 10). Full suite: 62 passed.
+
 ### Batch 6 — `thread_selector.py` (1 widget, split + test infra + lessons)
 
 - `012fae8` feat: port thread_selector.py (verbatim) — 545-LOC port:
@@ -169,15 +188,13 @@ Plan was the original `phase5b-plan.md` (now superseded by this doc).
 
 ---
 
-## Remaining work (3 widgets)
+## Remaining work (2 widgets)
 
 Recommended order (smallest leaf first → biggest dep last):
 
-1. **`message_store.py`** (580 LOC, leaf) — likely pure verbatim (storage
-   layer, no UI surface). Expected: 1 port commit + 1 test commit.
-2. **`model_selector.py`** (630 LOC, leaf) — likely has user-facing labels
+1. **`model_selector.py`** (630 LOC, leaf) — likely has user-facing labels
    (model picker title). Expected: port + theming + tests = 3+ commits.
-3. **`chat_input.py`** (749 LOC, depends on `history` + `autocomplete` +
+2. **`chat_input.py`** (749 LOC, depends on `history` + `autocomplete` +
    `messages` — all ported). Biggest theming surface ("Gotham Citizen"
    prompt label, etc.). Expected: port + theming + tests = 3+ commits.
 
