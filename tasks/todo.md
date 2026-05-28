@@ -244,7 +244,34 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
     Phase 7 alongside the widget.
   - Kept as deep import (not re-exported from `widgets/__init__.py`).
 - [x] Port `batman_code/widgets/history.py`
-- [ ] Port `batman_code/widgets/model_selector.py`
+- [x] Port `batman_code/widgets/model_selector.py`
+  - Verbatim port (630 LOC, leaf): only the two top-level imports
+    remapped — `deepagents_cli.config` → `batman_code.config` and
+    `deepagents_cli.model_config` → `batman_code.model_config`. Provides
+    `ModelSelectorScreen` (ModalScreen) + `ModelOption` (Static) for the
+    `/model` command.
+  - Gotham theming APPLIED:
+    - Title: "Select Model" → "Batcomputer Models" (with "active: ..."
+      variant when a current model is set).
+    - Active option marker: "(current)" → "(active)" for wording
+      consistency with the title (and with thread_selector).
+    - Extracted inline title from `compose()` into `_build_title()`
+      helper to mirror thread_selector's testable seam.
+  - Functional (NOT themed): credential indicators ("missing credentials"
+    / "credentials unknown"), "(default)" suffix, help text key bindings,
+    status messages ("Default set to ...", failure messages), provider
+    headers — all operational labels, not chrome.
+  - Tests: 30 unit tests in `tests/widgets/test_model_selector.py`
+    covering `_format_option_label` branch combinations (selected, creds
+    yellow / cyan / plain, current → "(active)" suffix, default suffix,
+    combined suffixes), `__init__` registry expansion + current-index
+    resolution + default-spec wiring (autouse monkeypatch fixture for
+    `get_available_models` and `ModelConfig`), `_update_filtered_list`
+    (case-insensitive, partial match, selection clamping, restore-on-clear),
+    and `_build_title` (no-active / full-active / model-only /
+    provider-only branches with regression guards). All 92 pass.
+  - Kept as deep import (not re-exported from `widgets/__init__.py`) per
+    source convention.
 - [x] Port `batman_code/widgets/thread_selector.py`
   - Verbatim port (545 LOC, leaf): only `deepagents_cli.*` imports remapped
     to `batman_code.*`. Provides `ThreadSelectorScreen` (ModalScreen) +

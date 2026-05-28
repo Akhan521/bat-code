@@ -27,10 +27,10 @@ matching one-liners in `tasks/todo.md` and the per-widget memory notes in
 | 10 | `autocomplete.py` | 630 | none | **DONE** (batch 5) | Verbatim — slash commands are functional IDs, no theming surface |
 | 11 | `thread_selector.py` | 545 | none | **DONE** (batch 6) | "Case Files" / "(active)" theming + 15 unit tests |
 | 12 | `message_store.py` | 580 | none | **DONE** (batch 7) | Pure verbatim (storage layer) + 47 unit tests |
-| 13 | `model_selector.py` | 630 | none | pending | Likely has user-facing labels (model picker title) |
+| 13 | `model_selector.py` | 630 | none | **DONE** (batch 8) | "Batcomputer Models" title + "(active)" marker; 30 unit tests |
 | 14 | `chat_input.py` | 749 | `history` + `autocomplete` + `messages` | pending | Biggest theming surface ("Gotham Citizen" prompt label, etc.) |
 
-**Done:** 12 / 14 (~4,672 LOC). **Remaining:** 2 / 14 (~1,379 LOC).
+**Done:** 13 / 14 (~5,302 LOC). **Remaining:** 1 / 14 (~749 LOC).
 
 ---
 
@@ -154,6 +154,33 @@ Plan was the original `phase5b-plan.md` (now superseded by this doc).
   dispatcher. Content-identical to source — `/batsignal` intentionally NOT
   added to SLASH_COMMANDS (handler + widget land together in Phase 7).
 
+### Batch 8 — `model_selector.py` (1 widget, port + tests + theming + tests bundled)
+
+- `5f361f1` feat: port model_selector.py (verbatim) — 630-LOC port:
+  `ModelSelectorScreen` (ModalScreen) + `ModelOption` (Static) for the
+  `/model` command. Only changes vs source: the two top-level imports
+  remapped (`deepagents_cli.config` → `batman_code.config`,
+  `deepagents_cli.model_config` → `batman_code.model_config`).
+- `6e1f41d` test: cover model_selector.py ported logic — 26 unit tests
+  covering `ModelOption` attribute storage, `ModelOption.Clicked` message,
+  `_format_option_label` branch combinations (cursor/spec/current/default,
+  has_creds variants including None), `__init__` registry expansion +
+  current-index resolution + default-spec wiring (autouse monkeypatch
+  fixture for `get_available_models` and `ModelConfig`),
+  `_update_filtered_list` (case-insensitive, partial match, selection
+  clamping, restore-on-clear).
+- `b125378` feat: apply Gotham theming to model_selector.py + adapt tests
+  — title "Select Model" → "Batcomputer Models" (with "active: ..."
+  variant), `(current)` → `(active)` marker. Extracted inline title
+  builder into `_build_title()` for testability (same seam pattern as
+  thread_selector). Updated 2 existing tests to assert themed wording +
+  added 4 new `_build_title` tests (no-active / full-active / model-only
+  / provider-only) — all with explicit regression guards against upstream
+  wording ("Select Model" not in title, "(current)" not in label).
+  Credential indicators / "(default)" suffix / help text / status
+  messages / provider headers kept functional per "chrome vs content"
+  convention.
+
 ### Batch 7 — `message_store.py` (1 widget, pure verbatim + tests)
 
 - `c59b94c` feat: port message_store.py (verbatim) — 580-LOC port:
@@ -188,18 +215,13 @@ Plan was the original `phase5b-plan.md` (now superseded by this doc).
 
 ---
 
-## Remaining work (2 widgets)
+## Remaining work (1 widget)
 
-Recommended order (smallest leaf first → biggest dep last):
-
-1. **`model_selector.py`** (630 LOC, leaf) — likely has user-facing labels
-   (model picker title). Expected: port + theming + tests = 3+ commits.
-2. **`chat_input.py`** (749 LOC, depends on `history` + `autocomplete` +
+1. **`chat_input.py`** (749 LOC, depends on `history` + `autocomplete` +
    `messages` — all ported). Biggest theming surface ("Gotham Citizen"
    prompt label, etc.). Expected: port + theming + tests = 3+ commits.
 
-Per user preference: **wait for explicit user approval before starting any
-of these.**
+Per user preference: **wait for explicit user approval before starting it.**
 
 ---
 
