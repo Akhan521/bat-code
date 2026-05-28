@@ -221,6 +221,20 @@ class ModelSelectorScreen(ModalScreen[tuple[str, str] | None]):
         config = ModelConfig.load()
         self._default_spec: str | None = config.default_model
 
+    def _build_title(self) -> str:
+        """Build the modal title with the active model in provider:model form.
+
+        Returns:
+            "Batcomputer Models" when no active model is set, or
+            "Batcomputer Models (active: ...)" with the spec inlined otherwise.
+        """
+        if self._current_model and self._current_provider:
+            current_spec = f"{self._current_provider}:{self._current_model}"
+            return f"Batcomputer Models (active: {current_spec})"
+        if self._current_model:
+            return f"Batcomputer Models (active: {self._current_model})"
+        return "Batcomputer Models"
+
     def _find_current_model_index(self) -> int:
         """Find the index of the current model in the filtered list.
 
@@ -245,15 +259,7 @@ class ModelSelectorScreen(ModalScreen[tuple[str, str] | None]):
         glyphs = get_glyphs()
 
         with Vertical():
-            # Title with current model in provider:model format
-            if self._current_model and self._current_provider:
-                current_spec = f"{self._current_provider}:{self._current_model}"
-                title = f"Select Model (current: {current_spec})"
-            elif self._current_model:
-                title = f"Select Model (current: {self._current_model})"
-            else:
-                title = "Select Model"
-            yield Static(title, classes="model-selector-title")
+            yield Static(self._build_title(), classes="model-selector-title")
 
             # Search input
             yield Input(
@@ -458,7 +464,7 @@ class ModelSelectorScreen(ModalScreen[tuple[str, str] | None]):
             spec_text = f"[cyan]{model_spec}[/cyan]"
         else:
             spec_text = model_spec
-        suffix = " [dim](current)[/dim]" if current else ""
+        suffix = " [dim](active)[/dim]" if current else ""
         default_suffix = " [cyan](default)[/cyan]" if is_default else ""
         return f"{cursor}{spec_text}{suffix}{default_suffix}"
 

@@ -173,15 +173,18 @@ def test_format_option_label_plain_spec_when_has_creds_not_default() -> None:
     assert "anthropic:claude-sonnet-4-6" in label
 
 
-def test_format_option_label_current_appends_current_suffix() -> None:
+def test_format_option_label_current_appends_active_suffix() -> None:
     label = ModelSelectorScreen._format_option_label(
         "anthropic:claude-opus-4-7",
         selected=False,
         current=True,
         has_creds=True,
     )
-    # Verbatim form — theming flips this to "(active)" in the next commit.
-    assert "(current)" in label
+    # Themed: "active" replaces upstream "current" for Gotham consistency
+    # with thread_selector's "Case Files (active: ...)" wording.
+    assert "(active)" in label
+    # Regression guard against accidental rollback to upstream wording.
+    assert "(current)" not in label
 
 
 def test_format_option_label_default_appends_default_suffix() -> None:
@@ -195,7 +198,7 @@ def test_format_option_label_default_appends_default_suffix() -> None:
     assert "[cyan](default)[/cyan]" in label
 
 
-def test_format_option_label_current_and_default_both_appear() -> None:
+def test_format_option_label_active_and_default_both_appear() -> None:
     label = ModelSelectorScreen._format_option_label(
         "anthropic:claude-opus-4-7",
         selected=False,
@@ -203,8 +206,11 @@ def test_format_option_label_current_and_default_both_appear() -> None:
         has_creds=True,
         is_default=True,
     )
-    assert "(current)" in label
+    # "(active)" is Gotham-themed; "(default)" stays functional (configured
+    # default is an operational designation, not chrome).
+    assert "(active)" in label
     assert "(default)" in label
+    assert "(current)" not in label
 
 
 # ---------------------------------------------------------------------------
@@ -337,3 +343,43 @@ def test_update_filtered_list_restores_current_index_on_clear() -> None:
     screen._filter_text = ""
     screen._update_filtered_list()
     assert screen._selected_index == 2  # openai:gpt-5
+
+
+# ---------------------------------------------------------------------------
+# _build_title — themed modal title
+# ---------------------------------------------------------------------------
+
+
+def test_build_title_no_active_model_uses_gotham_label() -> None:
+    screen = ModelSelectorScreen()
+    title = screen._build_title()
+    assert title == "Batcomputer Models"
+    # Regression guard against rollback to upstream wording.
+    assert "Select Model" not in title
+
+
+def test_build_title_with_full_active_spec() -> None:
+    screen = ModelSelectorScreen(
+        current_model="claude-opus-4-7", current_provider="anthropic"
+    )
+    title = screen._build_title()
+    assert title == "Batcomputer Models (active: anthropic:claude-opus-4-7)"
+    # Active marker uses "active:" (Gotham), not "current:" (upstream).
+    assert "active:" in title
+    assert "current:" not in title
+
+
+def test_build_title_with_only_current_model_name() -> None:
+    # Partial current state (model set, provider missing) — title falls back
+    # to bare model name with the themed prefix.
+    screen = ModelSelectorScreen(current_model="claude-opus-4-7")
+    title = screen._build_title()
+    assert title == "Batcomputer Models (active: claude-opus-4-7)"
+    assert "Select Model" not in title
+
+
+def test_build_title_with_only_provider_uses_plain_themed_label() -> None:
+    # Provider alone (no current_model) does NOT produce an "active: ..." form.
+    screen = ModelSelectorScreen(current_provider="anthropic")
+    title = screen._build_title()
+    assert title == "Batcomputer Models"
