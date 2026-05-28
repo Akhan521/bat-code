@@ -2,8 +2,6 @@
 
 This is the single source of truth for Phase 5 (porting 14 widgets from
 `libs/cli/deepagents_cli/widgets/` → `libs/batman-cli/batman_code/widgets/`).
-Supersedes the earlier `phase5-plan.md` (batch 1) and `phase5b-plan.md`
-(batch 2), which were session-scoped.
 
 Phase 5 spans multiple sessions. Status here is **authoritative**; the
 matching one-liners in `tasks/todo.md` and the per-widget memory notes in
@@ -101,8 +99,6 @@ libs/batman-cli/` after each port — must return zero hits.
 
 ### Batch 1 — Foundational chrome (3 widgets)
 
-Plan was the original `phase5-plan.md` (now superseded by this doc).
-
 - `d18c9cd` feat: port loading.py — bat-wing spinner, 4-message Gotham
   status rotation (5s), bat-gold color, `[dim]>==<[/dim]` paused state
 - `8cfaa2a` feat: port welcome.py — random Gotham welcome pool, bat-code
@@ -111,8 +107,6 @@ Plan was the original `phase5-plan.md` (now superseded by this doc).
   THE CAVE / BATCOMPUTER mode labels, bat-gold token counter
 
 ### Batch 2 — Verbatim leaf ports (4 widgets)
-
-Plan was the original `phase5b-plan.md` (now superseded by this doc).
 
 - `9f981d4` feat: port history.py — chat-input HistoryManager (JSON-lines,
   append-only)

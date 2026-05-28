@@ -86,26 +86,6 @@ revisited. Not blocking anything.
 
 ---
 
-## Phase 5 — Remaining Widget Ports (10 of 14 done)
-
-Listed here for completeness — these are not "deferred" in the punted
-sense, just sequenced. Suggested order (smallest leaf first → biggest
-dep last):
-
-1. `thread_selector.py` (545 LOC, leaf) — likely has user-facing labels
-   worth Batman theming (thread browser title)
-2. `message_store.py` (580 LOC, leaf) — likely pure verbatim (storage
-   layer, no UI surface)
-3. `model_selector.py` (630 LOC, leaf) — likely has user-facing labels
-   (model picker title)
-4. `chat_input.py` (749 LOC) — depends on `history` + `autocomplete` +
-   `messages` (all ported). Biggest theming surface — "Gotham Citizen"
-   prompt label, etc.
-
-Total remaining: ~2,504 LOC across 4 files.
-
----
-
 ## Future Phases (high-level)
 
 - **Phase 8** — `textual_adapter.py` (streaming → UI bridge) + `app.py`

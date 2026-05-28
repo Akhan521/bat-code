@@ -172,7 +172,7 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 5 — Core Widgets
+## Phase 5 — Core Widgets — IN PROGRESS (13 of 14)
 
 - [x] Port `batman_code/widgets/__init__.py` (incremental — re-exports added per-batch)
 
