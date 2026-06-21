@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from batman_code.widgets.chat_input import ChatInput
 from batman_code.widgets.loading import LoadingWidget, Spinner
 from batman_code.widgets.messages import (
     AppMessage,
@@ -17,6 +18,7 @@ from batman_code.widgets.welcome import WelcomeBanner
 __all__ = [
     "AppMessage",
     "AssistantMessage",
+    "ChatInput",
     "DiffMessage",
     "ErrorMessage",
     "LoadingWidget",
