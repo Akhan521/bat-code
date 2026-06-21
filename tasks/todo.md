@@ -172,7 +172,7 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 5 — Core Widgets — IN PROGRESS (13 of 14)
+## Phase 5 — Core Widgets — COMPLETE
 
 - [x] Port `batman_code/widgets/__init__.py` (incremental — re-exports added per-batch)
 
@@ -304,7 +304,32 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
     All 62 pass (47 new + 15 thread_selector).
   - Kept as deep import (not re-exported from `widgets/__init__.py`) per
     source convention.
-- [ ] Port `batman_code/widgets/chat_input.py`
+- [x] Port `batman_code/widgets/chat_input.py`
+  - Verbatim port (749 LOC) with three surgical changes:
+    - Three import remaps (`deepagents_cli.config` / `.widgets.autocomplete`
+      / `.widgets.history` → `batman_code.*`).
+    - History file default path: `~/.deepagents/history.jsonl` →
+      `~/.bat-code/history.jsonl` (correctness fix — keeps chat history
+      in bat-code's data dir alongside sessions, doesn't share state
+      with deepagents-cli installs).
+    - ASCII-fallback border color `"cyan"` → `"yellow"` so the ASCII
+      input border matches the Unicode bat-gold one rendered via `$primary`.
+  - Re-exported `ChatInput` from `widgets/__init__.py` per source
+    convention (ChatTextArea / CompletionOption / CompletionPopup stay
+    internal).
+  - Functional (NOT themed): prompt glyph `">"` (Gotham Citizen identity
+    lives on user messages in messages.py, not the input cursor), mode
+    names (normal / bash / command), key bindings, DEFAULT_CSS (already
+    inherits $primary / $surface from app.tcss).
+  - Tests: 44 unit tests in `tests/widgets/test_chat_input.py` covering
+    CompletionOption / CompletionPopup / ChatTextArea / ChatInput message
+    payloads, `__init__` wiring (history path + cwd defaults + initial
+    state), parametrized mode-detection signal, `_get_cursor_offset`
+    row/col → linear math (all clamp paths), `replace_completion_range`
+    (slash / file-mention / directory branches + space insertion +
+    multi-line cursor placement + bounds clamping), `value` /
+    `input_widget` properties. Full suite: **136 passed**.
+  - Phase 5 complete — all 14 widgets ported.
 
 ---
 

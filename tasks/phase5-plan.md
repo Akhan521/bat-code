@@ -26,9 +26,9 @@ matching one-liners in `tasks/todo.md` and the per-widget memory notes in
 | 11 | `thread_selector.py` | 545 | none | **DONE** (batch 6) | "Case Files" / "(active)" theming + 15 unit tests |
 | 12 | `message_store.py` | 580 | none | **DONE** (batch 7) | Pure verbatim (storage layer) + 47 unit tests |
 | 13 | `model_selector.py` | 630 | none | **DONE** (batch 8) | "Batcomputer Models" title + "(active)" marker; 30 unit tests |
-| 14 | `chat_input.py` | 749 | `history` + `autocomplete` + `messages` | pending | Biggest theming surface ("Gotham Citizen" prompt label, etc.) |
+| 14 | `chat_input.py` | 749 | `history` + `autocomplete` + `messages` | **DONE** (batch 9) | History path fix + ASCII border align; 44 unit tests |
 
-**Done:** 13 / 14 (~5,302 LOC). **Remaining:** 1 / 14 (~749 LOC).
+**Done:** 14 / 14 (~6,051 LOC). **Remaining:** 0. **Phase 5 COMPLETE.**
 
 ---
 
@@ -148,6 +148,39 @@ libs/batman-cli/` after each port — must return zero hits.
   dispatcher. Content-identical to source — `/batsignal` intentionally NOT
   added to SLASH_COMMANDS (handler + widget land together in Phase 7).
 
+### Batch 9 — `chat_input.py` (1 widget, port+fixes bundled + tests + docs)
+
+- `253c4f5` feat: port chat_input.py + re-export from widgets/__init__.py
+  — 749-LOC port: ChatInput (Vertical container with prompt + TextArea +
+  completion popup), ChatTextArea (TextArea subclass with custom key
+  handling for submit / newline / history / completion), CompletionOption
+  (clickable popup row), CompletionPopup (VerticalScroll holding option
+  rows). Three surgical changes vs source:
+  (1) three import remaps (`deepagents_cli.config` /
+      `.widgets.autocomplete` / `.widgets.history` → `batman_code.*`);
+  (2) hardcoded history-file default `~/.deepagents/history.jsonl` →
+      `~/.bat-code/history.jsonl` (correctness — keeps chat history in
+      bat-code's data dir alongside sessions, doesn't share state with
+      deepagents-cli);
+  (3) ASCII-fallback border color `"cyan"` → `"yellow"` so ASCII users
+      get a gold-toned input border consistent with the Unicode `$primary`
+      rendering.
+  Re-exported `ChatInput` from `widgets/__init__.py` per source
+  convention (ChatTextArea / CompletionOption / CompletionPopup stay
+  internal). Prompt glyph `>`, mode names, key bindings, DEFAULT_CSS
+  all kept verbatim — operational, not chrome.
+- `8f98625` test: cover chat_input.py ported logic — 44 unit tests
+  covering CompletionOption / CompletionPopup / ChatTextArea / ChatInput
+  message payloads, `__init__` wiring (history path regression guard,
+  cwd defaults + promotion, initial component state), parametrized
+  mode-detection signal mirroring `on_text_area_changed`'s prefix logic,
+  `_get_cursor_offset` math (single/multi-line + all clamp paths),
+  `replace_completion_range` (slash / file-mention / directory / bounds
+  clamping / multi-line cursor placement), `value` / `input_widget`
+  properties. Skips Textual-bound key handlers + async popup mounting.
+  Full suite: **136 passed** (44 new + 30 model_selector + 47
+  message_store + 15 thread_selector).
+
 ### Batch 8 — `model_selector.py` (1 widget, port + tests + theming + tests bundled)
 
 - `5f361f1` feat: port model_selector.py (verbatim) — 630-LOC port:
@@ -209,13 +242,14 @@ libs/batman-cli/` after each port — must return zero hits.
 
 ---
 
-## Remaining work (1 widget)
+## Remaining work — none
 
-1. **`chat_input.py`** (749 LOC, depends on `history` + `autocomplete` +
-   `messages` — all ported). Biggest theming surface ("Gotham Citizen"
-   prompt label, etc.). Expected: port + theming + tests = 3+ commits.
+Phase 5 is **complete**. All 14 widgets ported, 136 unit tests passing,
+zero `deepagents_cli` references anywhere under `libs/batman-cli/`.
 
-Per user preference: **wait for explicit user approval before starting it.**
+Next: Phase 8 — `textual_adapter.py` (streaming → UI bridge) +
+`app.py` (BatmanApp shell, layered containers, mode toggling). All
+ported widgets get wired together there.
 
 ---
 
