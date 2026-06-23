@@ -417,20 +417,94 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 8 — Textual Adapter & Main App
+## Phase 8 — Textual Adapter & Main App — PLANNED (not started)
 
-- [ ] Port `batman_code/textual_adapter.py` from `deepagents_cli/textual_adapter.py`
-  - Update all `deepagents_cli.*` imports to `batman_code.*`
-  - Update message class references to Batman widget names
+Full plan: see `tasks/phase8-plan.md` (authoritative). This checklist
+mirrors that doc's per-commit shape with check-offs added per commit.
 
-- [ ] Write `batman_code/app.py` — `BatmanApp(App[int])`
-  - `CSS_PATH = "app.tcss"`
-  - `BINDINGS`: same as deepagents_cli plus `/batsignal` binding
-  - `compose()`: WelcomeBanner → VerticalScroll(messages) → ChatInput → StatusBar
-  - On mount: show `BatcaveScreen` unless `--no-splash`
-  - `/batsignal` command handler: mount/unmount `BatSignalOverlay`
-  - Joker persona: show warning modal at startup ("Enabling DARK KNIGHT MODE. Chaos incoming.")
-  - All themed string constants use config.py values
+### Batch 10 — `textual_adapter.py` (895 LOC)
+
+- [ ] `feat(batman-cli): port textual_adapter.py (verbatim)`
+  - 5 import remaps: `deepagents_cli.{file_ops, image_utils, input, ui,
+    widgets.messages}` → `batman_code.*`
+  - Zero behavioral changes; theming deferred to commit 3
+- [ ] `test(batman-cli): cover textual_adapter.py pure-logic helpers`
+  - `_build_stream_config` (config dict shape)
+  - `_is_summarization_chunk` (metadata predicate truth table)
+  - `_build_interrupted_ai_message` (text/tool reconstruction edge cases)
+  - Skip `execute_task_textual` (640-line async loop — Phase 10 covers)
+- [ ] `feat(batman-cli): theme textual_adapter.py narrative strings`
+  - `"Thinking"` → Gotham equivalent
+  - `"Interrupted by user"` → themed
+  - `"Command rejected. Tell the agent what you'd like instead."` → themed
+- [ ] `test(batman-cli): cover textual_adapter.py theming` (bundle with
+  commit 3 if <30 LOC of tests)
+  - Assert themed strings appear + regression guards against upstream wording
+
+### Batch 11 — `app.py` (2094 LOC)
+
+- [ ] `feat(batman-cli): port app.py (verbatim with import remaps)` —
+  **single 2094-LOC commit** (matches Batch 3 messages.py shape)
+  - All `deepagents_cli.*` → `batman_code.*` (~15 import statements)
+  - `from deepagents_cli.agent import create_cli_agent` →
+    `from batman_code.agent import create_batman_agent` (incl. line 1943
+    call site)
+  - `DeepAgentsApp` class name → `BatmanApp`
+  - `_COMMAND_URLS` dict: `changelog` / `docs` / `feedback` →
+    `https://github.com/Akhan521/bat-code/...` URLs (correctness fix
+    bundled with port, same pattern as Batch 9 chat_input history path)
+  - **No theming, no logic changes, no new behavior**
+- [ ] `test(batman-cli): cover app.py pure-logic helpers`
+  - `QueuedMessage` dataclass
+  - `TextualTokenTracker` (add accumulates, reset zeroes)
+  - `TextualSessionState` (`reset_thread` produces 8-char hex,
+    `auto_approve` flag persistence)
+  - `_COMMAND_URLS` dict integrity (keys present, URLs match bat-code repo)
+  - `_build_thread_message` URL fallback (with URL → linked Text,
+    without → plain str)
+  - Skip lifecycle hooks, action handlers, modal wiring (Phase 10)
+- [ ] `feat(batman-cli): theme app.py with Gotham language`
+  - App `TITLE` class variable `"Deep Agents"` → **`"bat-code"`**
+  - Help text: Gotham voice; slash names stay functional
+  - Status messages: `"Switched to ..."` / `"Resumed thread ..."` /
+    `"No active session"` / `"Unknown command:"` / `"Model not configured"`
+    etc. → themed
+  - Approval-mode toggle confirmations mirror StatusBar's
+    `"DETECTIVE MODE"` / `"DARK KNIGHT MODE"` labels
+  - **Joker startup warning modal** (NEW, not in source):
+    `BatmanApp.__init__(persona: str = "batman")`; `on_mount` pushes
+    themed modal when `persona == "joker"`. Conditional logic =
+    unit-testable seam
+  - **`UserMessage` theming touch in `widgets/messages.py`** (Phase 5
+    follow-up bundled here):
+    - Border-left + `> ` prefix `#10b981` →
+      `COLORS["gotham_blue"]` (`#1a3a5c`)
+    - Add `"Gotham Citizen:"` label above content in compose layout
+      (closes CLAUDE.md Phase 1 spec item Phase 5 deferred)
+  - `REMEMBER_PROMPT` (347 lines, agent prompt): verbatim + minimal
+    `s/deepagents-cli/bat-code/g` swap, keep substance intact
+- [ ] `test(batman-cli): cover app.py theming` (bundle with commit 3 if
+  <30 LOC of tests)
+  - Assert themed strings + regression guards (`"Deep Agents" not in TITLE`)
+  - Test joker warning modal mounts only when `persona == "joker"`
+  - Test `UserMessage` border color is no longer `#10b981`
+- [ ] `docs: mark Phase 8 COMPLETE` — bump `tasks/todo.md` Phase 8
+  header, `tasks/phase8-plan.md` scope table, `MEMORY.md` next-session
+  pointer (moves on to Phase 9 — `main.py` CLI entry)
+
+### Splash mount details (decision locked at planning)
+
+- `BatmanApp.__init__` accepts `no_splash: bool = False`
+- `on_mount` conditionally pushes `BatcaveScreen` if `no_splash=False`
+- The `--no-splash` CLI flag flows from Phase 9 `main.py` → constructor
+
+### Re-export note
+
+`textual_adapter.py` and `app.py` aren't widgets — **no**
+`widgets/__init__.py` changes expected. Import as
+`from batman_code.textual_adapter import ...` and
+`from batman_code.app import BatmanApp` (the latter only from Phase 9's
+`main.py`).
 
 ---
 
