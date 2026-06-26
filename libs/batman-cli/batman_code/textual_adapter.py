@@ -292,7 +292,7 @@ async def execute_task_textual(
 
     # Show spinner
     if adapter._set_spinner:
-        await adapter._set_spinner("Thinking")
+        await adapter._set_spinner("Investigating")
 
     # Hide token display during streaming (will be shown with accurate count at end)
     if adapter._token_tracker:
@@ -411,7 +411,7 @@ async def execute_task_textual(
 
                         # Reshow spinner after tool result
                         if adapter._set_spinner:
-                            await adapter._set_spinner("Thinking")
+                            await adapter._set_spinner("Investigating")
 
                         # Update tool call status with output
                         tool_id = getattr(message, "tool_call_id", None)
@@ -754,7 +754,7 @@ async def execute_task_textual(
                 if suppress_resumed_output:
                     await adapter._mount_message(
                         AppMessage(
-                            "Command rejected. Tell the agent what you'd like instead."
+                            "Order denied. Tell the Dark Knight what to do instead."
                         )
                     )
                     return
@@ -771,7 +771,7 @@ async def execute_task_textual(
         if adapter._set_active_message:
             adapter._set_active_message(None)
 
-        await adapter._mount_message(AppMessage("Interrupted by user"))
+        await adapter._mount_message(AppMessage("Mission aborted."))
 
         # Save accumulated state before marking tools as rejected (best-effort)
         # State update failures shouldn't prevent cleanup
@@ -814,7 +814,7 @@ async def execute_task_textual(
         if adapter._set_active_message:
             adapter._set_active_message(None)
 
-        await adapter._mount_message(AppMessage("Interrupted by user"))
+        await adapter._mount_message(AppMessage("Mission aborted."))
 
         # Save accumulated state before marking tools as rejected (best-effort)
         # State update failures shouldn't prevent cleanup

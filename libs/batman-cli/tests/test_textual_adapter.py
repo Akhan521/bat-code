@@ -286,3 +286,41 @@ def test_hitl_request_adapter_is_initialized() -> None:
     on import (catches regressions if langchain HITL types move)."""
     from batman_code.textual_adapter import _HITL_REQUEST_ADAPTER
     assert _HITL_REQUEST_ADAPTER is not None
+
+
+# ---------------------------------------------------------------------------
+# Theming — Gotham narrative strings inside execute_task_textual
+#
+# These strings live inside an async generator body that's only reachable
+# through a running LangGraph stream. We inspect the function source to
+# assert the themed wording is present + guard against rollback to upstream.
+# ---------------------------------------------------------------------------
+
+
+def _adapter_source() -> str:
+    import inspect
+
+    from batman_code.textual_adapter import execute_task_textual
+
+    return inspect.getsource(execute_task_textual)
+
+
+def test_spinner_label_uses_themed_investigating() -> None:
+    src = _adapter_source()
+    assert '"Investigating"' in src
+    # Regression guard against rollback to upstream wording.
+    assert '"Thinking"' not in src
+
+
+def test_cancellation_message_uses_themed_mission_aborted() -> None:
+    src = _adapter_source()
+    assert '"Mission aborted."' in src
+    # Regression guard.
+    assert '"Interrupted by user"' not in src
+
+
+def test_hitl_reject_message_uses_themed_order_denied() -> None:
+    src = _adapter_source()
+    assert "Order denied. Tell the Dark Knight what to do instead." in src
+    # Regression guard.
+    assert "Command rejected. Tell the agent what you'd like instead." not in src
