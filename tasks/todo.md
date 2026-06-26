@@ -417,29 +417,31 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 8 — Textual Adapter & Main App — PLANNED (not started)
+## Phase 8 — Textual Adapter & Main App — IN PROGRESS (Batch 10 done)
 
 Full plan: see `tasks/phase8-plan.md` (authoritative). This checklist
 mirrors that doc's per-commit shape with check-offs added per commit.
 
-### Batch 10 — `textual_adapter.py` (895 LOC)
+### Batch 10 — `textual_adapter.py` (895 LOC) — COMPLETE
 
-- [ ] `feat(batman-cli): port textual_adapter.py (verbatim)`
-  - 5 import remaps: `deepagents_cli.{file_ops, image_utils, input, ui,
-    widgets.messages}` → `batman_code.*`
+- [x] `feat(batman-cli): port textual_adapter.py (verbatim)` (`8a5de62`)
+  - 5 import remaps applied: `deepagents_cli.{file_ops, image_utils,
+    input, ui, widgets.messages}` → `batman_code.*`
   - Zero behavioral changes; theming deferred to commit 3
-- [ ] `test(batman-cli): cover textual_adapter.py pure-logic helpers`
-  - `_build_stream_config` (config dict shape)
-  - `_is_summarization_chunk` (metadata predicate truth table)
-  - `_build_interrupted_ai_message` (text/tool reconstruction edge cases)
-  - Skip `execute_task_textual` (640-line async loop — Phase 10 covers)
-- [ ] `feat(batman-cli): theme textual_adapter.py narrative strings`
-  - `"Thinking"` → Gotham equivalent
-  - `"Interrupted by user"` → themed
-  - `"Command rejected. Tell the agent what you'd like instead."` → themed
-- [ ] `test(batman-cli): cover textual_adapter.py theming` (bundle with
-  commit 3 if <30 LOC of tests)
-  - Assert themed strings appear + regression guards against upstream wording
+- [x] `test(batman-cli): cover textual_adapter.py pure-logic helpers` (`4504f8c`)
+  - 25 tests covering `_build_stream_config`, `_is_summarization_chunk`,
+    `_build_interrupted_ai_message`, `TextualUIAdapter.__init__` /
+    `set_token_tracker`, `_HITL_REQUEST_ADAPTER` smoke check
+- [x] `feat(batman-cli): theme textual_adapter.py narrative strings` (`95fda97`,
+  theming + 3 regression tests bundled per `lessons.md` <30-LOC rule)
+  - `"Thinking"` → **`"Investigating"`** (DETECTIVE MODE voice)
+  - `"Interrupted by user"` → **`"Mission aborted."`** (cinematic)
+  - `"Command rejected. Tell the agent what you'd like instead."` →
+    **`"Order denied. Tell the Dark Knight what to do instead."`**
+    (DARK KNIGHT MODE branding, instructive guidance preserved)
+  - Regression tests use `inspect.getsource(execute_task_textual)` to
+    assert themed strings present + upstream strings gone
+- Suite: **164 passed** (3 batch-10 commits + 136 Phase 5).
 
 ### Batch 11 — `app.py` (2094 LOC)
 
