@@ -470,17 +470,22 @@ mirrors that doc's per-commit shape with check-offs added per commit.
     usable until Phase 9 anyway.
   - **No theming, no logic changes, no new on_mount behavior beyond
     the `no_splash` storage above.**
-- [ ] `test(batman-cli): cover app.py pure-logic helpers`
-  - `QueuedMessage` dataclass
-  - `TextualTokenTracker` (add accumulates, reset zeroes)
-  - `TextualSessionState` (`reset_thread` produces 8-char hex,
-    `auto_approve` flag persistence)
-  - `_COMMAND_URLS` dict integrity (keys present, URLs match bat-code repo)
-  - `_build_thread_message` URL fallback (with URL → linked Text,
-    without → plain str)
-  - `BatmanApp.__init__` smoke: `no_splash` defaults to False, stored
-    as `self._no_splash`; explicit value preserved.
-  - Skip lifecycle hooks, action handlers, modal wiring (Phase 10)
+- [x] `test(batman-cli): cover app.py pure-logic helpers` (`46fe383`)
+  - 40 unit tests in `tests/test_app.py` covering: `QueuedMessage`
+    (frozen, fields, equality, all 3 InputMode literal values);
+    `TextualTokenTracker` (add accumulates + notifies, overwrites
+    previous, reset zeroes, hide is no-op without callback, show
+    replays current_context); `TextualSessionState` (defaults, auto_
+    approve persistence, reset_thread generates distinct 8-char hex,
+    auto_approve survives reset); `_COMMAND_URLS` integrity (three
+    keys, bat-code repo URLs with regression guards against rollback,
+    /docs delegates to DOCS_URL); `_build_thread_message` async URL
+    resolver (Rich Text on success, plain str on None or exception);
+    `BatmanApp.__init__` (no_splash defaults False + explicit value
+    preserved, all other storage defaults, cwd path handling, tools
+    falsy → empty list, MessageStore + deques start empty); module-
+    level smoke (REMEMBER_PROMPT size check, InputMode literal values).
+  - Suite: **204 passed** (40 new + 28 textual_adapter + 136 Phase 5).
 - [ ] `feat(batman-cli): theme app.py + add splash/joker on_mount
   behavior` — this is the BIG commit; nothing in commit 1 covers the
   items below. Expected to be the largest single commit of Batch 11.
