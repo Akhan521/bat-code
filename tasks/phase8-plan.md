@@ -152,18 +152,31 @@ Conventions section for the full text. Quick reminders:
 
 1. **`feat(batman-cli): port app.py (verbatim with import remaps)`** —
    single 2094-LOC commit. Big diff but reviewable as "did import
-   remaps + class rename apply correctly." Changes:
-   - All `deepagents_cli.*` imports → `batman_code.*` (~15 statements).
+   remaps + class rename + `no_splash` deviation apply correctly."
+   Changes:
+   - All `deepagents_cli.*` imports → `batman_code.*` (~15 top-level +
+     1 inline `_version` import at the `/version` handler).
    - `from deepagents_cli.agent import create_cli_agent` →
      `from batman_code.agent import create_batman_agent` (and the
-     call site at source line 1943 updated).
-   - `DeepAgentsApp` class name → `BatmanApp`.
-   - `_COMMAND_URLS` dict targets repointed: `changelog` / `docs` /
-     `feedback` → bat-code repo URLs
-     (`https://github.com/Akhan521/bat-code/...`). Same correctness-
-     fix-bundled-with-port pattern as Batch 9's chat_input history
-     path.
-   - **No theming, no logic changes, no new behavior.**
+     call site at source line 1943 + the comment at line 1932 updated).
+   - `DeepAgentsApp` class name → `BatmanApp` (incl. the
+     `run_textual_app` constructor call site).
+   - `_COMMAND_URLS` dict targets repointed: `changelog` / `feedback`
+     → bat-code repo URLs (`https://github.com/Akhan521/bat-code/...`).
+     `/docs` keeps `DOCS_URL` constant. Same correctness-fix-bundled-
+     with-port pattern as Batch 9's chat_input history path.
+   - **Approved deviation from pure verbatim**: `BatmanApp.__init__`
+     accepts `no_splash: bool = False` (kw-only) and stores as
+     `self._no_splash`. The pre-existing Phase 1 `main.py` stub already
+     calls `BatmanApp(no_splash=args.no_splash)`; without this param,
+     runtime breaks. The `on_mount` conditional push of `BatcaveScreen`
+     deliberately stays out of commit 1 (deferred to commit 3
+     alongside joker modal — both are new on_mount behavior).
+     Temporary regression accepted: between commits 1 and 3, launching
+     `bat-code` skips splash. CLI isn't end-to-end usable until Phase 9
+     anyway.
+   - **No theming, no logic changes, no new on_mount behavior beyond
+     the `no_splash` storage above.**
 2. **`test(batman-cli): cover app.py pure-logic helpers`** —
    ~25-40 tests:
    - `QueuedMessage` dataclass (init, equality, mode field).
@@ -175,38 +188,80 @@ Conventions section for the full text. Quick reminders:
      bat-code repo).
    - `_build_thread_message` URL fallback (with URL → linked Text,
      without → plain str).
+   - `BatmanApp.__init__` smoke: `no_splash` defaults to False, stored
+     as `self._no_splash`; explicit value preserved through init.
    - Skip lifecycle hooks, action handlers, modal wiring — those need
      a mounted Textual app and are covered by Phase 10.
-3. **`feat(batman-cli): theme app.py with Gotham language`** — apply
-   themed wording to the ~15+ user-facing strings:
-   - App `TITLE` class variable `"Deep Agents"` → **`"bat-code"`**.
-   - Help text command-list intro: Gotham voice; slash names stay
-     functional.
+3. **`feat(batman-cli): theme app.py + add splash/joker on_mount
+   behavior`** — the BIG commit. This is where everything deferred
+   from commit 1 lands. Expected to be the largest single commit of
+   the batch. Four concern groups:
+
+   **A. New on_mount behavior (NOT in source — bat-code-specific):**
+   - **Splash mount**: add `from batman_code.widgets.batcave import
+     BatcaveScreen` import. In `on_mount`, conditionally push
+     `BatcaveScreen(no_splash=self._no_splash)` early (before agent /
+     adapter wiring). **No exit callback** — splash dismisses to
+     reveal chat UI, NOT exit the app (different from Phase 1 demo
+     stub which exited on dismiss because nothing else was wired).
+   - **Joker startup warning modal** (NEW): add `persona: str =
+     "batman"` kw-only param to `BatmanApp.__init__` (stored as
+     `self._persona`); `on_mount` pushes themed modal when
+     `persona == "joker"` (after splash, before chat focus). Both
+     conditional pushes are unit-testable seams.
+
+   **B. Theming — narrative strings (chrome → Gotham voice):**
+   - App `TITLE` `"Deep Agents"` → **`"bat-code"`** (line 353).
+   - Help text command-list intro + footer (lines 1087-1101) — Gotham
+     voice; slash names + key-binding mnemonics stay functional.
+   - `/version` output: `"deepagents version: ..."` (lines 1112,
+     1115) → themed.
    - Status messages: `"Switched to ..."` / `"Resumed thread ..."` /
-     `"No active session"` / `"Unknown command:"` / `"Model not
-     configured"` etc.
+     `"No active session"` / `"Unknown command:"` / `"Already using
+     ..."` / `"Started new thread: ..."` / `"Already on thread: ..."`
+     / `"Failed to switch to thread ..."` → themed.
+   - Error messages: `"Agent not configured."` (1250) / `"Failed to
+     create model: ..."` (1928) / `"Model switch failed: ..."` (1958)
+     / `"Could not save model preference."` (1915) / `"Cannot switch
+     threads: ..."` (1782, 1788) / `"Missing credentials: ..."`
+     (1890) → themed.
+   - Auto-approved shell command notice (line 829), model-preference
+     restart notice (line 1908), LangSmith tracing hint (line 1062),
+     `"Command completed (no output)"` (line 976), `"Press Ctrl+C
+     again to quit"` notification (1593) → themed.
+   - Resume-thread label `"Resumed thread"` prefix (line 1431) →
+     themed.
    - Approval-mode toggle confirmations mirror StatusBar's
      `"DETECTIVE MODE"` / `"DARK KNIGHT MODE"` labels (already
      themed in Phase 5).
-   - **Joker startup warning modal** (NEW, not in source):
-     `BatmanApp.__init__(persona: str = "batman")`; `on_mount`
-     pushes a themed warning modal when `persona == "joker"`. Title
-     + body Gotham-themed. Conditional logic = unit-testable seam.
-   - **`UserMessage` theming touch in `widgets/messages.py`**
-     (small Phase 5 follow-up bundled here):
-     - Border-left + `> ` prefix `#10b981` → `COLORS["gotham_blue"]`
-       (`#1a3a5c`).
-     - Add `"Gotham Citizen:"` label above content in compose layout
-       (closes the CLAUDE.md Phase 1 spec item Phase 5 deferred).
-   - **`REMEMBER_PROMPT`** (347-line agent prompt, NOT chrome):
-     verbatim + minimal `s/deepagents-cli/bat-code/g` swap. Keep
-     substance intact.
-4. **`test(batman-cli): cover app.py theming`** — assert themed
-   strings appear in help / status outputs, plus regression guards
-   (`"Deep Agents" not in TITLE`, etc.). Test joker warning modal
-   mounts only when `persona == "joker"`. Test `UserMessage` border
-   color is no longer `#10b981`. **Bundle with commit 3** if tests
-   stay <30 LOC.
+   - Class + module + `__init__` docstrings that say "deepagents-cli"
+     → "bat-code" (lines 1, 351, 409).
+
+   **C. Path correctness (currently still says `~/.deepagents/`):**
+   - 5 occurrences in error messages (lines 1888, 1916, 1977, 2016,
+     2037) → `~/.bat-code/`.
+   - 3 occurrences in `REMEMBER_PROMPT` (lines ~265, 266, 284):
+     `~/.deepagents/agent/AGENTS.md`, `.deepagents/AGENTS.md`,
+     `~/.deepagents/agent/skills/` → `~/.bat-code/...`.
+   - `REMEMBER_PROMPT` (347-line agent prompt, NOT chrome): verbatim
+     + minimal `s/deepagents-cli/bat-code/g` swap. Keep substance
+     intact.
+
+   **D. `UserMessage` theming touch in `widgets/messages.py`** (Phase
+   5 follow-up bundled here):
+   - Border-left + `> ` prefix `#10b981` → `COLORS["gotham_blue"]`
+     (`#1a3a5c`).
+   - Add `"Gotham Citizen:"` label above content in compose layout
+     (closes the CLAUDE.md Phase 1 spec item Phase 5 deferred).
+
+4. **`test(batman-cli): cover app.py theming + new on_mount behavior`**
+   — assert themed strings appear + regression guards (`"Deep Agents"
+   not in TITLE`, `"deepagents version" not in source` via
+   `inspect.getsource` — same pattern as Batch 10's adapter theming
+   tests). Test joker warning modal mounts only when `persona ==
+   "joker"`. Test splash mount triggers only when `no_splash=False`.
+   Test `UserMessage` border color is no longer `#10b981`. **Bundle
+   with commit 3** if tests stay <30 LOC.
 5. **`docs: mark Phase 8 COMPLETE`** — bump `tasks/todo.md` Phase 8
    section, this `tasks/phase8-plan.md` scope table, `MEMORY.md`
    next-session pointer (which moves on to Phase 9 — `main.py` CLI
