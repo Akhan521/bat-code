@@ -79,7 +79,7 @@ class UserMessage(Static):
         padding: 0 1;
         margin: 1 0 0 0;
         background: transparent;
-        border-left: wide #10b981;
+        border-left: wide #1a3a5c;
     }
     """
 
@@ -96,16 +96,19 @@ class UserMessage(Static):
     def on_mount(self) -> None:
         """Set border style based on charset mode."""
         if _detect_charset_mode() == CharsetMode.ASCII:
-            self.styles.border_left = ("ascii", "#10b981")
+            self.styles.border_left = ("ascii", "#1a3a5c")
 
     def compose(self) -> ComposeResult:
         """Compose the user message layout.
 
         Yields:
-            Static widget containing the formatted user message.
+            Static widget containing the formatted user message with the
+            "Gotham Citizen:" sender label above the content.
         """
         text = Text()
-        text.append("> ", style="bold #10b981")
+        # Gotham Citizen label on its own line above the content.
+        text.append("Gotham Citizen:\n", style="bold #1a3a5c")
+        text.append("> ", style="bold #1a3a5c")
 
         # Highlight @mentions and /commands in the content
         content = self._content
