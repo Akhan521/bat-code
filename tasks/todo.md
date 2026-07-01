@@ -417,7 +417,7 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 8 — Textual Adapter & Main App — IN PROGRESS (Batch 10 done)
+## Phase 8 — Textual Adapter & Main App — COMPLETE
 
 Full plan: see `tasks/phase8-plan.md` (authoritative). This checklist
 mirrors that doc's per-commit shape with check-offs added per commit.
@@ -486,9 +486,8 @@ mirrors that doc's per-commit shape with check-offs added per commit.
     falsy → empty list, MessageStore + deques start empty); module-
     level smoke (REMEMBER_PROMPT size check, InputMode literal values).
   - Suite: **204 passed** (40 new + 28 textual_adapter + 136 Phase 5).
-- [ ] `feat(batman-cli): theme app.py + add splash/joker on_mount
-  behavior` — this is the BIG commit; nothing in commit 1 covers the
-  items below. Expected to be the largest single commit of Batch 11.
+- [x] Commit 3 SPLIT into 3 sub-commits per small-commit convention
+  (all applied concerns from the "BIG commit" scope below):
 
   **New on_mount behavior (NOT in source):**
   - **Splash mount**: add `from batman_code.widgets.batcave import
@@ -567,18 +566,47 @@ mirrors that doc's per-commit shape with check-offs added per commit.
   - Add `"Gotham Citizen:"` label above content in compose layout
     (closes CLAUDE.md Phase 1 spec item Phase 5 deferred)
 
-- [ ] `test(batman-cli): cover app.py theming + new on_mount behavior`
-  (bundle with previous commit if <30 LOC of tests)
-  - Assert themed strings appear + regression guards (`"Deep Agents"
-    not in TITLE`, `"deepagents version" not in source` via
-    `inspect.getsource` — same pattern as Batch 10's adapter theming
-    tests)
-  - Test joker warning modal mounts only when `persona == "joker"`
-  - Test splash mount triggers only when `no_splash=False`
-  - Test `UserMessage` border color is no longer `#10b981`
-- [ ] `docs: mark Phase 8 COMPLETE` — bump `tasks/todo.md` Phase 8
-  header, `tasks/phase8-plan.md` scope table, `MEMORY.md` next-session
-  pointer (moves on to Phase 9 — `main.py` CLI entry)
+- [x] `feat(batman-cli): add on_mount splash + joker modal behavior` (`84098a0`)
+  - BatcaveScreen import added
+  - `persona: str = "batman"` kw-only param + `self._persona` storage
+  - `JokerWarningModal(ModalScreen[None])` class defined inline with
+    "⚠ DARK KNIGHT MODE ENGAGED" title + "Chaos incoming" body per
+    user-selected "Dramatic" wording; any key dismisses
+  - on_mount pushes JokerWarningModal (bottom of stack) if
+    persona=="joker", then BatcaveScreen (top of stack) if not no_splash
+  - No exit callback on BatcaveScreen — full Phase 8 reveals chat
+    after splash dismisses (unlike Phase 1 demo stub which exited)
+- [x] `feat(batman-cli): theme app.py with Gotham language + bat-code paths` (`b307c67`)
+  - Group B narrative theming: TITLE, docstrings, /version, help
+    text with Batcomputer/DARK KNIGHT MODE/THE CAVE labels, all
+    status confirmations (New case opened, Batcomputer deployed,
+    Case reopened, etc.), Villain detected error prefix, Ctrl+C
+    Batcave hint, Unrecognized Batcomputer command, No active
+    patrol, Auto-authorized (Batcave allow-list), Mission complete
+  - Group C path corrections: 5 error-message paths + 3
+    REMEMBER_PROMPT paths → `~/.bat-code/`
+  - Only remaining `deepagents` refs: SDK imports
+    `from deepagents.backends import ...` (unchanged — first-party
+    dep of the deepagents package, not deepagents-cli)
+- [x] `feat(batman-cli): theme UserMessage with Gotham Citizen sender label` (`50b5f82`)
+  - Border-left + ASCII fallback + `> ` prefix colors all `#10b981`
+    → `#1a3a5c` (gotham_blue)
+  - `"Gotham Citizen:\n"` prepended above the `> content` line
+  - QueuedUserMessage untouched (its grey styling is intentional
+    "queued while agent runs" ephemeral state)
+- [x] `test(batman-cli): cover app.py + messages.py Batch 11 theming` (`ef567d2`)
+  - 39 new theming regression tests appended to tests/test_app.py
+    using `inspect.getsource(...)` pattern (same as Batch 10)
+  - Covers TITLE, docstrings, /version, REMEMBER_PROMPT paths, all
+    themed method bodies (help text, bash notice, auto-approve
+    notice, agent lifecycle, case/thread vocabulary, model
+    switching), persona defaults + on_mount conditional pushes,
+    JokerWarningModal class + title + body, UserMessage border
+    color + Gotham Citizen label + prefix styling
+  - Suite: **243 passed** (39 new + 204 prior)
+- [x] `docs: mark Phase 8 COMPLETE` — bumps this checklist +
+  phase8-plan.md scope table + MEMORY.md next-session pointer
+  (moves on to Phase 9 — `main.py` CLI entry)
 
 ### Splash mount details (decision locked at planning)
 

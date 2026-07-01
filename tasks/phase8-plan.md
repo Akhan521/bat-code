@@ -1,3 +1,20 @@
+# Phase 8 — Textual Adapter & Main App — COMPLETE
+
+**Status**: Both batches landed and pushed to `origin/main`.
+**Suite: 243 passed** (zero `deepagents_cli` refs anywhere under
+`libs/batman-cli/`; only remaining `deepagents.*` refs are SDK imports
+`from deepagents.backends import ...` which reference the first-party
+deepagents package, not deepagents-cli).
+
+Batch 10 (`textual_adapter.py`, 895 LOC): 4 commits `8a5de62..07227ed`.
+Batch 11 (`app.py`, 2094 LOC + messages.py touchup): 8 commits
+`da674a3..ef567d2`.
+
+Next: **Phase 9 — `main.py` CLI entry** (see `tasks/todo.md` Phase 9
+section for the checklist).
+
+---
+
 # Phase 8 — Textual Adapter & Main App — Implementation Plan
 
 This is the **single source of truth for Phase 8** (porting the streaming
