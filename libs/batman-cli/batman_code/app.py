@@ -49,6 +49,7 @@ from batman_code.model_config import (
 )
 from batman_code.textual_adapter import TextualUIAdapter, execute_task_textual
 from batman_code.widgets.approval import ApprovalMenu
+from batman_code.widgets.batcave import BatcaveScreen
 from batman_code.widgets.chat_input import ChatInput
 from batman_code.widgets.loading import LoadingWidget
 from batman_code.widgets.message_store import MessageData, MessageStore
@@ -347,6 +348,55 @@ List what you captured and where you stored it:
 """  # noqa: E501
 
 
+class JokerWarningModal(ModalScreen[None]):
+    """Startup warning shown when the joker persona is active.
+
+    Signals the auto-approve bypass baked into the joker persona so the
+    user knows what they're getting into before the chat opens. Any key
+    dismisses.
+    """
+
+    DEFAULT_CSS = """
+    JokerWarningModal {
+        align: center middle;
+    }
+
+    JokerWarningModal > Container {
+        width: 62;
+        height: auto;
+        padding: 1 2;
+        background: $surface;
+        border: solid $error;
+    }
+
+    JokerWarningModal .joker-title {
+        text-style: bold;
+        color: $error;
+        text-align: center;
+    }
+
+    JokerWarningModal .joker-body {
+        margin-top: 1;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Container():
+            yield Static("⚠ DARK KNIGHT MODE ENGAGED", classes="joker-title")
+            yield Static(
+                "\nEnabling DARK KNIGHT MODE. Chaos incoming.\n\n"
+                "The Joker persona bypasses all safety prompts and "
+                "auto-approves every tool call. Proceed at your own risk.\n\n"
+                "[dim]Press any key to continue.[/dim]",
+                classes="joker-body",
+            )
+
+    def on_key(self, event: Any) -> None:
+        """Dismiss on any key press."""
+        event.stop()
+        self.dismiss(None)
+
+
 class BatmanApp(App):
     """Main Textual application for deepagents-cli."""
 
@@ -405,6 +455,7 @@ class BatmanApp(App):
         sandbox: SandboxBackendProtocol | None = None,
         sandbox_type: str | None = None,
         no_splash: bool = False,
+        persona: str = "batman",
         **kwargs: Any,
     ) -> None:
         """Initialize the Deep Agents application.
@@ -421,9 +472,9 @@ class BatmanApp(App):
             tools: Tools used to create the agent (for model hot-swap)
             sandbox: Sandbox backend (for model hot-swap)
             sandbox_type: Type of sandbox provider (for model hot-swap)
-            no_splash: When True, suppress the BatcaveScreen splash on mount.
-                Stored only; the conditional on_mount push lands in the
-                theming commit alongside the joker startup modal.
+            no_splash: When True, skip the BatcaveScreen splash on mount.
+            persona: Active persona name (e.g. `"batman"`, `"joker"`). Used
+                by on_mount to trigger the joker startup warning modal.
             **kwargs: Additional arguments passed to parent
         """
         super().__init__(**kwargs)
@@ -436,6 +487,7 @@ class BatmanApp(App):
         self._lc_thread_id = thread_id
         self._initial_prompt = initial_prompt
         self._no_splash = no_splash
+        self._persona = persona
         # Store for model hot-swap
         self._checkpointer = checkpointer
         self._tools = tools or []
@@ -479,6 +531,14 @@ class BatmanApp(App):
 
     async def on_mount(self) -> None:
         """Initialize components after mount."""
+        # Push modal-stack screens in reverse-reveal order: joker first (bottom
+        # of the stack, revealed after splash dismisses), then splash on top.
+        # User flow: splash → joker (if persona==joker) → chat.
+        if self._persona == "joker":
+            self.push_screen(JokerWarningModal())
+        if not self._no_splash:
+            self.push_screen(BatcaveScreen(no_splash=False))
+
         if _detect_charset_mode() == CharsetMode.ASCII:
             chat = self.query_one("#chat", VerticalScroll)
             chat.styles.scrollbar_size_vertical = 0
