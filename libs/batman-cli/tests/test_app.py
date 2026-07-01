@@ -388,3 +388,358 @@ def test_app_module_input_mode_literal_values() -> None:
     # someone renaming the mode strings in the dispatch chain.
     for mode in ("normal", "bash", "command"):
         QueuedMessage(text="x", mode=mode)  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
+# Theming — Gotham voice + bat-code paths + persona/splash on_mount behavior
+#
+# Method-body strings can't be reached without mounting the app, so we
+# inspect the source with `inspect.getsource` (same pattern as Batch 10's
+# adapter theming tests). Each assertion asserts the themed string is
+# present AND the upstream wording is gone (regression guard).
+# ---------------------------------------------------------------------------
+
+
+def _method_source(cls: type, name: str) -> str:
+    import inspect
+
+    return inspect.getsource(getattr(cls, name))
+
+
+# ---- TITLE + module/class docstrings -------------------------------------
+
+
+def test_title_is_bat_code() -> None:
+    assert BatmanApp.TITLE == "bat-code"
+
+
+def test_title_regression_guard_no_deep_agents() -> None:
+    assert "Deep Agents" not in BatmanApp.TITLE
+
+
+def test_class_docstring_says_bat_code_not_deepagents_cli() -> None:
+    assert BatmanApp.__doc__ is not None
+    assert "bat-code" in BatmanApp.__doc__
+    assert "deepagents-cli" not in BatmanApp.__doc__
+
+
+def test_module_docstring_says_bat_code_not_deepagents_cli() -> None:
+    assert app_module.__doc__ is not None
+    assert "bat-code" in app_module.__doc__
+    assert "deepagents-cli" not in app_module.__doc__
+
+
+def test_init_docstring_says_bat_code_not_deep_agents() -> None:
+    src = _method_source(BatmanApp, "__init__")
+    assert "bat-code application" in src
+    assert "Deep Agents application" not in src
+
+
+# ---- /version handler + REMEMBER_PROMPT paths ----------------------------
+
+
+def test_version_handler_reports_bat_code_not_deepagents() -> None:
+    src = _method_source(BatmanApp, "_handle_command")
+    assert '"bat-code version:' in src or "'bat-code version:" in src
+    assert '"deepagents version:' not in src
+    assert "'deepagents version:" not in src
+
+
+def test_remember_prompt_paths_are_bat_code_not_deepagents() -> None:
+    from batman_code.app import REMEMBER_PROMPT
+
+    assert "~/.bat-code/agent/AGENTS.md" in REMEMBER_PROMPT
+    assert ".bat-code/AGENTS.md" in REMEMBER_PROMPT
+    assert "~/.bat-code/agent/skills/" in REMEMBER_PROMPT
+    # Regression: no stale deepagents paths anywhere in the prompt.
+    assert "~/.deepagents/" not in REMEMBER_PROMPT
+    assert ".deepagents/AGENTS.md" not in REMEMBER_PROMPT
+
+
+# ---- _handle_command Gotham voice ---------------------------------------
+
+
+def test_handle_command_help_text_says_batcomputer_commands() -> None:
+    src = _method_source(BatmanApp, "_handle_command")
+    assert "Batcomputer Commands:" in src
+    # Upstream label gone.
+    assert '"Commands: /quit' not in src
+
+
+def test_handle_command_help_mentions_dark_knight_mode() -> None:
+    src = _method_source(BatmanApp, "_handle_command")
+    assert "DARK KNIGHT MODE" in src
+
+
+def test_handle_command_help_mentions_the_cave() -> None:
+    src = _method_source(BatmanApp, "_handle_command")
+    assert "THE CAVE" in src
+
+
+def test_handle_command_unknown_command_uses_batcomputer_wording() -> None:
+    src = _method_source(BatmanApp, "_handle_command")
+    assert "Unrecognized Batcomputer command:" in src
+    assert "Unknown command:" not in src
+
+
+def test_handle_command_new_thread_uses_new_case_opened() -> None:
+    src = _method_source(BatmanApp, "_handle_command")
+    assert "New case opened:" in src
+    assert "Started new thread:" not in src
+
+
+def test_handle_command_tokens_idle_message_themed() -> None:
+    src = _method_source(BatmanApp, "_handle_command")
+    assert "Batcomputer idle. No token usage yet." in src
+    assert '"No token usage yet"' not in src
+
+
+# ---- _handle_bash_command Gotham voice ----------------------------------
+
+
+def test_handle_bash_command_mission_complete_no_output() -> None:
+    src = _method_source(BatmanApp, "_handle_bash_command")
+    assert "Mission complete. No output." in src
+    assert "Command completed (no output)" not in src
+
+
+# ---- Auto-approve shell notice ------------------------------------------
+
+
+def test_request_approval_auto_authorized_batcave_wording() -> None:
+    src = _method_source(BatmanApp, "_request_approval")
+    assert "Auto-authorized (Batcave allow-list):" in src
+    assert "Auto-approved shell command (allow-list):" not in src
+
+
+# ---- _handle_trace_command -----------------------------------------------
+
+
+def test_handle_trace_command_no_active_patrol() -> None:
+    src = _method_source(BatmanApp, "_handle_trace_command")
+    assert "No active patrol." in src
+    assert "No active session." not in src
+
+
+# ---- Agent lifecycle -----------------------------------------------------
+
+
+def test_handle_user_message_dark_knight_standing_down() -> None:
+    src = _method_source(BatmanApp, "_handle_user_message")
+    assert "The Dark Knight is standing down" in src
+    assert '"Agent not configured. "' not in src
+
+
+def test_run_agent_task_villain_detected_error_wording() -> None:
+    src = _method_source(BatmanApp, "_run_agent_task")
+    assert "Villain detected:" in src
+    assert "Agent error:" not in src
+
+
+# ---- Thread history loading ---------------------------------------------
+
+
+def test_load_thread_history_case_reopened_prefix() -> None:
+    src = _method_source(BatmanApp, "_load_thread_history")
+    assert '"Case reopened"' in src
+    assert '"Resumed thread"' not in src
+
+
+# ---- Quit hint -----------------------------------------------------------
+
+
+def test_action_quit_or_interrupt_leave_the_batcave() -> None:
+    src = _method_source(BatmanApp, "action_quit_or_interrupt")
+    assert "leave the Batcave" in src
+    assert '"Press Ctrl+C again to quit"' not in src
+
+
+# ---- Thread switching (_resume_thread) ----------------------------------
+
+
+def test_resume_thread_case_wording() -> None:
+    src = _method_source(BatmanApp, "_resume_thread")
+    assert "Cannot switch cases: no active Dark Knight" in src
+    assert "Cannot switch cases: no active patrol" in src
+    assert "Already on this case:" in src
+    assert "Case switch failed:" in src
+    # Upstream user-facing wording gone.
+    assert "Cannot switch threads: no active agent" not in src
+    assert "Cannot switch threads: no active session" not in src
+    assert "Already on thread:" not in src
+    # NOTE: `logger.exception("Failed to switch to thread %s", ...)` stays
+    # in the source — that's an internal diagnostic, not user-facing chrome.
+    # We only guard against the AppMessage-embedded upstream wording:
+    assert 'f"Failed to switch to thread {thread_id}' not in src
+
+
+# ---- Model switching (_switch_model) -------------------------------------
+
+
+def test_switch_model_batcomputer_wording() -> None:
+    src = _method_source(BatmanApp, "_switch_model")
+    assert "Batcomputer already deployed:" in src
+    assert "Batcomputer preference set to" in src
+    assert "Could not save Batcomputer preference." in src
+    assert "Failed to load Batcomputer model:" in src
+    assert "Batcomputer redeploy failed:" in src
+    assert "Batcomputer deployed:" in src
+    # Upstream gone.
+    assert '"Already using ' not in src
+    assert '"Model preference set to ' not in src
+    assert "Could not save model preference." not in src
+    assert "Failed to create model:" not in src
+    assert "Model switch failed:" not in src
+    assert '"Switched to ' not in src
+
+
+def test_switch_model_paths_are_bat_code() -> None:
+    src = _method_source(BatmanApp, "_switch_model")
+    assert "~/.bat-code/" in src
+    assert "~/.deepagents/" not in src
+
+
+# ---- Default model management -------------------------------------------
+
+
+def test_set_default_model_batcomputer_wording() -> None:
+    src = _method_source(BatmanApp, "_set_default_model")
+    assert "Default Batcomputer set to" in src
+    assert "Default model set to" not in src
+    assert "~/.bat-code/" in src
+    assert "~/.deepagents/" not in src
+
+
+def test_clear_default_model_batcomputer_wording() -> None:
+    src = _method_source(BatmanApp, "_clear_default_model")
+    assert "Default Batcomputer cleared." in src
+    assert "Could not clear default Batcomputer." in src
+    assert "Default model cleared." not in src
+    assert "Could not clear default model." not in src
+    assert "~/.bat-code/" in src
+    assert "~/.deepagents/" not in src
+
+
+# ---------------------------------------------------------------------------
+# on_mount new behavior — persona + splash conditional pushes
+# ---------------------------------------------------------------------------
+
+
+def test_batman_app_init_persona_defaults_to_batman() -> None:
+    app = BatmanApp()
+    assert app._persona == "batman"
+
+
+def test_batman_app_init_persona_explicit_value_preserved() -> None:
+    app = BatmanApp(persona="joker")
+    assert app._persona == "joker"
+
+
+def test_batman_app_init_persona_stores_arbitrary_name() -> None:
+    # Constructor doesn't validate persona name — that's main.py's job.
+    app = BatmanApp(persona="alfred")
+    assert app._persona == "alfred"
+
+
+def test_on_mount_source_pushes_joker_modal_when_persona_matches() -> None:
+    src = _method_source(BatmanApp, "on_mount")
+    assert 'self._persona == "joker"' in src
+    assert "JokerWarningModal" in src
+
+
+def test_on_mount_source_pushes_splash_when_no_splash_false() -> None:
+    src = _method_source(BatmanApp, "on_mount")
+    assert "not self._no_splash" in src
+    assert "BatcaveScreen" in src
+
+
+def test_on_mount_source_uses_batcavescreen_without_exit_callback() -> None:
+    # The Phase 1 demo stub pushed BatcaveScreen with a `callback=lambda _:
+    # self.exit(0)` — full Phase 8 must drop that so splash reveals chat
+    # instead of exiting.
+    src = _method_source(BatmanApp, "on_mount")
+    assert "self.exit(0)" not in src
+
+
+# ---------------------------------------------------------------------------
+# JokerWarningModal — themed title + body
+# ---------------------------------------------------------------------------
+
+
+def test_joker_warning_modal_class_exists() -> None:
+    from batman_code.app import JokerWarningModal
+
+    assert JokerWarningModal is not None
+
+
+def test_joker_warning_modal_title_dark_knight_mode_engaged() -> None:
+    import inspect
+
+    from batman_code.app import JokerWarningModal
+
+    src = inspect.getsource(JokerWarningModal)
+    assert "DARK KNIGHT MODE ENGAGED" in src
+
+
+def test_joker_warning_modal_body_chaos_incoming() -> None:
+    import inspect
+
+    from batman_code.app import JokerWarningModal
+
+    src = inspect.getsource(JokerWarningModal)
+    assert "Chaos incoming" in src
+
+
+def test_joker_warning_modal_body_mentions_auto_approve_bypass() -> None:
+    import inspect
+
+    from batman_code.app import JokerWarningModal
+
+    src = inspect.getsource(JokerWarningModal)
+    assert "auto-approves" in src or "auto-approve" in src.lower()
+
+
+# ---------------------------------------------------------------------------
+# UserMessage widget theming (Phase 5 deferred-spec closeout)
+# ---------------------------------------------------------------------------
+
+
+def test_user_message_border_left_uses_gotham_blue() -> None:
+    import inspect
+
+    from batman_code.widgets.messages import UserMessage
+
+    src = inspect.getsource(UserMessage)
+    # Border color themed to gotham_blue (#1a3a5c).
+    assert "border-left: wide #1a3a5c" in src
+    # Regression guard against upstream green.
+    assert "border-left: wide #10b981" not in src
+
+
+def test_user_message_ascii_fallback_uses_gotham_blue() -> None:
+    import inspect
+
+    from batman_code.widgets.messages import UserMessage
+
+    src = inspect.getsource(UserMessage)
+    assert '("ascii", "#1a3a5c")' in src
+    assert '("ascii", "#10b981")' not in src
+
+
+def test_user_message_has_gotham_citizen_label() -> None:
+    import inspect
+
+    from batman_code.widgets.messages import UserMessage
+
+    src = inspect.getsource(UserMessage)
+    assert "Gotham Citizen:" in src
+
+
+def test_user_message_prefix_arrow_uses_gotham_blue() -> None:
+    import inspect
+
+    from batman_code.widgets.messages import UserMessage
+
+    src = inspect.getsource(UserMessage)
+    # The "> " prefix should be styled bold gotham_blue.
+    assert 'style="bold #1a3a5c"' in src
