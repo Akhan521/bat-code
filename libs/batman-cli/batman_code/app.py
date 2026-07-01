@@ -1,4 +1,4 @@
-"""Textual UI application for deepagents-cli."""
+"""Textual UI application for bat-code."""
 
 from __future__ import annotations
 
@@ -263,8 +263,8 @@ Use memory when the knowledge is:
 - Something to always keep in mind
 - A simple rule or pattern
 
-**Global** (`~/.deepagents/agent/AGENTS.md`): Universal preferences across all projects
-**Project** (`.deepagents/AGENTS.md`): Project-specific conventions and decisions
+**Global** (`~/.bat-code/agent/AGENTS.md`): Universal preferences across all projects
+**Project** (`.bat-code/AGENTS.md`): Project-specific conventions and decisions
 
 ### → Skill for reusable workflows and methodologies
 **Create a skill when** we developed:
@@ -282,7 +282,7 @@ If we established best practices around a workflow or process, capture them in a
 **Example:** If we discussed best practices for code review, create a `code-review` skill that encodes those practices into a reusable workflow.
 
 ### Skill Location
-`~/.deepagents/agent/skills/<skill-name>/SKILL.md`
+`~/.bat-code/agent/skills/<skill-name>/SKILL.md`
 
 ### Skill Structure
 ```
@@ -398,9 +398,9 @@ class JokerWarningModal(ModalScreen[None]):
 
 
 class BatmanApp(App):
-    """Main Textual application for deepagents-cli."""
+    """Main Textual application for bat-code."""
 
-    TITLE = "Deep Agents"
+    TITLE = "bat-code"
     CSS_PATH = "app.tcss"
     ENABLE_COMMAND_PALETTE = False
 
@@ -458,7 +458,7 @@ class BatmanApp(App):
         persona: str = "batman",
         **kwargs: Any,
     ) -> None:
-        """Initialize the Deep Agents application.
+        """Initialize the bat-code application.
 
         Args:
             agent: Pre-configured LangGraph agent (optional for standalone mode)
@@ -891,7 +891,7 @@ class BatmanApp(App):
                     messages = self.query_one("#messages", Container)
                     for command in approved_commands:
                         auto_msg = AppMessage(
-                            f"✓ Auto-approved shell command (allow-list): {command}"
+                            f"✓ Auto-authorized (Batcave allow-list): {command}"
                         )
                         await self._mount_before_queued(messages, auto_msg)
                     self._scroll_chat_to_bottom()
@@ -1038,7 +1038,7 @@ class BatmanApp(App):
                 await self._mount_message(msg)
                 await msg.write_initial_content()
             else:
-                await self._mount_message(AppMessage("Command completed (no output)"))
+                await self._mount_message(AppMessage("Mission complete. No output."))
 
             if result.returncode != 0:
                 await self._mount_message(
@@ -1110,7 +1110,7 @@ class BatmanApp(App):
         """
         await self._mount_message(UserMessage(command))
         if not self._session_state:
-            await self._mount_message(AppMessage("No active session."))
+            await self._mount_message(AppMessage("No active patrol."))
             return
         thread_id = self._session_state.thread_id
         try:
@@ -1150,15 +1150,15 @@ class BatmanApp(App):
         elif cmd == "/help":
             await self._mount_message(UserMessage(command))
             help_text = Text(
-                "Commands: /quit, /clear, /model [--default], /remember, "
+                "Batcomputer Commands: /quit, /clear, /model [--default], /remember, "
                 "/tokens, /threads, /trace, /changelog, /docs, /feedback, /help\n\n"
                 "Interactive Features:\n"
                 "  Enter           Submit your message\n"
                 "  Ctrl+J          Insert newline\n"
-                "  Shift+Tab       Toggle auto-approve mode\n"
+                "  Shift+Tab       Toggle DARK KNIGHT MODE (auto-approve)\n"
                 "  @filename       Auto-complete files and inject content\n"
-                "  /command        Slash commands (/help, /clear, /quit)\n"
-                "  !command        Run bash commands directly\n\n"
+                "  /command        Batcomputer commands (/help, /clear, /quit)\n"
+                "  !command        Run bash commands in THE CAVE\n\n"
                 f"Docs: {DOCS_URL}",
                 style="dim italic",
             )
@@ -1174,10 +1174,10 @@ class BatmanApp(App):
                 from batman_code._version import __version__
 
                 await self._mount_message(
-                    AppMessage(f"deepagents version: {__version__}")
+                    AppMessage(f"bat-code version: {__version__}")
                 )
             except Exception:
-                await self._mount_message(AppMessage("deepagents version: unknown"))
+                await self._mount_message(AppMessage("bat-code version: unknown"))
         elif cmd == "/clear":
             self._pending_messages.clear()
             self._queued_widgets.clear()
@@ -1195,7 +1195,7 @@ class BatmanApp(App):
                 except NoMatches:
                     pass
                 await self._mount_message(
-                    AppMessage(f"Started new thread: {new_thread_id}")
+                    AppMessage(f"New case opened: {new_thread_id}")
                 )
         elif cmd == "/threads":
             await self._show_thread_selector()
@@ -1213,7 +1213,7 @@ class BatmanApp(App):
                     AppMessage(f"Current context: {formatted} tokens")
                 )
             else:
-                await self._mount_message(AppMessage("No token usage yet"))
+                await self._mount_message(AppMessage("Batcomputer idle. No token usage yet."))
         elif cmd == "/remember" or cmd.startswith("/remember "):
             # Extract any additional context after /remember
             additional_context = ""
@@ -1264,7 +1264,7 @@ class BatmanApp(App):
                 await self._show_model_selector()
         else:
             await self._mount_message(UserMessage(command))
-            await self._mount_message(AppMessage(f"Unknown command: {cmd}"))
+            await self._mount_message(AppMessage(f"Unrecognized Batcomputer command: {cmd}"))
 
         # Scroll to bottom after command output is rendered.
         # Use call_after_refresh so the layout pass completes first;
@@ -1312,7 +1312,7 @@ class BatmanApp(App):
         else:
             await self._mount_message(
                 AppMessage(
-                    "Agent not configured. "
+                    "The Dark Knight is standing down — no agent configured. "
                     "Run with --agent flag or use standalone mode."
                 )
             )
@@ -1335,7 +1335,7 @@ class BatmanApp(App):
                 backend=self._backend,
             )
         except Exception as e:
-            await self._mount_message(ErrorMessage(f"Agent error: {e}"))
+            await self._mount_message(ErrorMessage(f"Villain detected: {e}"))
         finally:
             # Clean up loading widget and agent state
             await self._cleanup_agent_task()
@@ -1493,7 +1493,7 @@ class BatmanApp(App):
             # Show system message indicating this is a resumed thread,
             # with a clickable LangSmith link when tracing is configured.
             thread_msg = await self._build_thread_message(
-                "Resumed thread", self._lc_thread_id
+                "Case reopened", self._lc_thread_id
             )
             await self._mount_message(AppMessage(thread_msg))
 
@@ -1655,7 +1655,7 @@ class BatmanApp(App):
             self.exit()
         else:
             self._quit_pending = True
-            self.notify("Press Ctrl+C again to quit", timeout=3)
+            self.notify("Press Ctrl+C again to leave the Batcave", timeout=3)
 
     def action_interrupt(self) -> None:
         """Handle escape key - interrupt agent, reject approval, or dismiss modal.
@@ -1844,19 +1844,19 @@ class BatmanApp(App):
         """
         if not self._agent:
             await self._mount_message(
-                AppMessage("Cannot switch threads: no active agent")
+                AppMessage("Cannot switch cases: no active Dark Knight")
             )
             return
 
         if not self._session_state:
             await self._mount_message(
-                AppMessage("Cannot switch threads: no active session")
+                AppMessage("Cannot switch cases: no active patrol")
             )
             return
 
         # Skip if already on this thread
         if self._session_state.thread_id == thread_id:
-            await self._mount_message(AppMessage(f"Already on thread: {thread_id}"))
+            await self._mount_message(AppMessage(f"Already on this case: {thread_id}"))
             return
 
         # Save previous state for rollback on failure
@@ -1914,7 +1914,7 @@ class BatmanApp(App):
                 )
             await self._mount_message(
                 AppMessage(
-                    f"Failed to switch to thread {thread_id}: {exc}. "
+                    f"Case switch failed: {thread_id}: {exc}. "
                     "Use /threads to try again."
                 )
             )
@@ -1950,7 +1950,7 @@ class BatmanApp(App):
             else:
                 detail = (
                     f"provider '{provider}' is not recognized. "
-                    "Add it to ~/.deepagents/config.toml with an api_key_env field"
+                    "Add it to ~/.bat-code/config.toml with an api_key_env field"
                 )
             await self._mount_message(ErrorMessage(f"Missing credentials: {detail}"))
             return
@@ -1960,7 +1960,7 @@ class BatmanApp(App):
             not provider or provider == settings.model_provider
         ):
             current = f"{settings.model_provider}:{settings.model_name}"
-            await self._mount_message(AppMessage(f"Already using {current}"))
+            await self._mount_message(AppMessage(f"Batcomputer already deployed: {current}"))
             return
 
         # Check if we have what we need for hot-swap
@@ -1970,15 +1970,15 @@ class BatmanApp(App):
             if save_recent_model(model_spec):
                 await self._mount_message(
                     AppMessage(
-                        f"Model preference set to {model_spec}. "
-                        "Restart the CLI for the change to take effect."
+                        f"Batcomputer preference set to {model_spec}. "
+                        "Restart the CLI to redeploy."
                     )
                 )
             else:
                 await self._mount_message(
                     ErrorMessage(
-                        "Could not save model preference. "
-                        "Check permissions for ~/.deepagents/"
+                        "Could not save Batcomputer preference. "
+                        "Check permissions for ~/.bat-code/"
                     )
                 )
             return
@@ -1990,7 +1990,7 @@ class BatmanApp(App):
             return
         except Exception as e:
             logger.exception("Failed to create model from spec %s", model_spec)
-            await self._mount_message(ErrorMessage(f"Failed to create model: {e}"))
+            await self._mount_message(ErrorMessage(f"Failed to load Batcomputer model: {e}"))
             return
 
         # When switching models, settings must be updated before
@@ -2020,7 +2020,7 @@ class BatmanApp(App):
             settings.model_provider = prev_provider
             settings.model_context_limit = prev_context_limit
             logger.exception("Failed to create agent for model switch")
-            await self._mount_message(ErrorMessage(f"Model switch failed: {e}"))
+            await self._mount_message(ErrorMessage(f"Batcomputer redeploy failed: {e}"))
             return
 
         # Swap agent
@@ -2034,12 +2034,12 @@ class BatmanApp(App):
 
         config_saved = save_recent_model(display)
         if config_saved:
-            await self._mount_message(AppMessage(f"Switched to {display}"))
+            await self._mount_message(AppMessage(f"Batcomputer deployed: {display}"))
         else:
             await self._mount_message(
                 AppMessage(
-                    f"Switched to {display} (preference not saved - "
-                    "check ~/.deepagents/ permissions)"
+                    f"Batcomputer deployed: {display} (preference not saved — "
+                    "check ~/.bat-code/ permissions)"
                 )
             )
 
@@ -2059,7 +2059,7 @@ class BatmanApp(App):
     async def _set_default_model(self, model_spec: str) -> None:
         """Set the default model in config without switching the current session.
 
-        Updates `[models].default` in `~/.deepagents/config.toml` so that
+        Updates `[models].default` in `~/.bat-code/config.toml` so that
         future CLI launches use this model. Does not affect the running session.
 
         Args:
@@ -2074,11 +2074,11 @@ class BatmanApp(App):
                 model_spec = f"{provider}:{model_spec}"
 
         if save_default_model(model_spec):
-            await self._mount_message(AppMessage(f"Default model set to {model_spec}"))
+            await self._mount_message(AppMessage(f"Default Batcomputer set to {model_spec}"))
         else:
             await self._mount_message(
                 ErrorMessage(
-                    "Could not save default model. Check permissions for ~/.deepagents/"
+                    "Could not save default model. Check permissions for ~/.bat-code/"
                 )
             )
 
@@ -2091,15 +2091,15 @@ class BatmanApp(App):
         if clear_default_model():
             await self._mount_message(
                 AppMessage(
-                    "Default model cleared. "
+                    "Default Batcomputer cleared. "
                     "Future launches will use recent model or auto-detect."
                 )
             )
         else:
             await self._mount_message(
                 ErrorMessage(
-                    "Could not clear default model. "
-                    "Check permissions for ~/.deepagents/"
+                    "Could not clear default Batcomputer. "
+                    "Check permissions for ~/.bat-code/"
                 )
             )
 
