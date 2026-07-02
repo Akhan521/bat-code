@@ -629,28 +629,113 @@ mirrors that doc's per-commit shape with check-offs added per commit.
 
 ---
 
-## Phase 9 — CLI Entry Point
+## Phase 9 — CLI Entry Point — IN PROGRESS (3 of 6 commits)
 
-- [ ] Write `batman_code/main.py`
-  - `cli_main()` function — entry for `bat-code` console script
-  - `argparse` with Rich-formatted help (port pattern from `deepagents_cli/main.py`)
-  - Arguments:
-    - `-p/--persona` choices: `[batman, alfred, oracle, nightwing, joker]`, default: `batman`
-    - `-M/--model` for model override
-    - `-r/--resume [ID]` for thread resume
-    - `-n/--non-interactive MESSAGE` for single-task mode
-    - `--auto-approve` flag (forced on for joker persona)
-    - `--no-splash` flag to skip batcave animation
-    - `--sandbox TYPE` for remote execution
-    - Subcommands: `list`, `reset`, `skills`, `threads`
-  - Startup flow:
-    1. Load `.env`
-    2. Parse args
-    3. Validate persona, warn if joker
-    4. Set up checkpointer (SQLite at `~/.bat-code/`)
-    5. Create sandbox if requested
-    6. Call `create_batman_agent()`
-    7. Launch `BatmanApp`
+Full plan: see `tasks/phase9-plan.md` (authoritative). This checklist
+mirrors that doc's per-commit shape with check-offs added per commit.
+
+### Batch 12 — `main.py` (~880 LOC) — 3 of 6 landed
+
+- [x] `feat(batman-cli): extend run_textual_app with persona + no_splash params` (`09b56eb`)
+  - Prep commit: `run_textual_app` gains `persona: str = "batman"` and
+    `no_splash: bool = False` kwargs, threaded straight into the
+    `BatmanApp` constructor. Both params were added to `BatmanApp` in
+    Phase 8 (commit `84098a0`) but the wrapper wasn't updated, so
+    `main.py` couldn't reach them.
+  - 2 bundled signature/forwarding tests (`inspect.signature` for
+    defaults + `inspect.getsource` for the two `persona=persona` /
+    `no_splash=no_splash` forwards).
+
+- [x] `feat(batman-cli): port main.py with import remaps + persona flag + no_splash` (`cf543d7`)
+  - 800-LOC replacement of the Phase 0/1 stub.
+  - **Mechanical port**: all `deepagents_cli.*` imports (10 top-level +
+    ~7 inline lazy imports) → `batman_code.*`; `create_cli_agent`
+    → `create_batman_agent` with `persona=` kwarg; description
+    → `"bat-code — Batman-themed AI Coding Assistant"`; version
+    → `f"bat-code {__version__}"`; 5 `~/.deepagents/` error paths
+    → `~/.bat-code/`; `deepagents -r` / `deepagents threads list`
+    hints → `bat-code ...`; `apply_stdin_pipe` docstring examples
+    → `| bat-code`; `check_cli_dependencies` messages → bat-code +
+    `cd libs/batman-cli && uv sync` guidance.
+  - **CLI surface change**: `-a/--agent` (unconstrained, default
+    `"agent"`) **replaced** by `-p/--persona` (`choices=PERSONA_NAMES`,
+    `default=DEFAULT_PERSONA="batman"`). Persona value feeds both
+    `create_batman_agent(persona=...)` (prompt overlay) AND
+    `assistant_id` (memory namespace) — one flag, one mental model.
+    `threads list --agent` filter → `threads list --persona`; `reset
+    --agent` stays verbatim (subcommand-scoped target identifier).
+  - **New `--no-splash`** flag threaded through
+    `run_textual_cli_async` → `run_textual_app` → `BatmanApp`.
+    `run_textual_cli_async` gains `persona` + `no_splash` kwargs.
+  - **No narrative Gotham theming yet** — chrome strings like
+    `"Resuming thread"` / `"Application error"` / `"Interrupted"` stay
+    verbatim. Deferred to commit 4 (theming pass) to keep the port
+    diff scoped to structural + identity fixes.
+  - Post-port: `bat-code --help` renders the persona flag with the 5
+    choices; `bat-code -p invalid` is rejected by argparse; zero
+    `deepagents_cli` references remain in `libs/batman-cli/` source.
+
+- [x] `test(batman-cli): cover main.py pure-logic helpers` (`a1889f7`)
+  - 33 unit tests in `tests/test_main.py` covering:
+    - `check_cli_dependencies` — all-present / single-missing (with
+      "bat-code" wording assertion + upstream "deepagents CLI" guard)
+      / all-missing enumeration.
+    - `parse_args` argparse surface — defaults; `-p` accepts all 5
+      canonicals + rejects unknown; dropped `-a/--agent` no longer
+      parses; `--no-splash` toggles; `-r` bare vs. `-r <id>`; sandbox
+      choice constraint; subparsers (help / list / reset / skills /
+      threads); `reset --agent` required; `threads list --persona`
+      filter rename + `ls` alias + `delete` positional. Version
+      output regression guard: prints "bat-code" not "deepagents-cli".
+    - `apply_stdin_pipe` — six branches (`sys.stdin=None` passthrough,
+      TTY passthrough, empty piped passthrough, no-flag → sets
+      non_interactive_message, existing `-n` prepend, existing `-m`
+      prepend), plus docstring example regression guard. Uses a small
+      `_StdinStub` (StringIO + settable `isatty`) and patches
+      `os.open` to raise so TTY restoration doesn't touch the real
+      terminal.
+    - `run_textual_cli_async` — signature exposes persona + no_splash
+      with correct defaults, calls `create_batman_agent` (regression
+      guard against `create_cli_agent`), forwards persona to BOTH
+      the agent factory AND `run_textual_app`, forwards no_splash to
+      `run_textual_app`.
+    - Identity regression guards — no `from deepagents_cli` imports,
+      description says "bat-code" not "Deep Agents", `cli_main`
+      paths point at `~/.bat-code/`, hint strings use `bat-code -r`
+      / `bat-code threads list`.
+  - Suite: **278 passed** (33 new + 245 prior).
+
+- [ ] `feat(batman-cli): theme main.py narrative strings` — NEXT
+  - Chrome-only Gotham voice pass on `run_textual_cli_async` +
+    `cli_main` user-facing strings. Proposed wording (confirm before
+    applying, mirror Phase 8's locked vocabulary):
+    - `"Resuming thread: "` / `"Starting with thread: "` → case-based
+      voice ("Reopening case" / "Opening new case" proposed).
+    - `"\n\n[yellow]Interrupted[/yellow]"` (Ctrl+C) →
+      `"Left the Batcave."` (mirrors StatusBar hint).
+    - `"No previous thread for ..."` / `"No previous threads..."` /
+      `"Thread 'X' not found"` → case vocabulary.
+    - `"Application error: "` → `"Villain detected: "` (mirrors
+      `app.py` runtime error prefix themed in commit `b307c67`).
+    - `"View this thread in LangSmith: "` → case vocabulary.
+    - `"Resume this thread with:"` → case vocabulary.
+    - Default-model status strings — align to `app.py`'s
+      "Batcomputer" vocabulary for consistency.
+  - **Kept functional (NOT themed)**: argparse `help=` strings (they
+    describe operational behavior users see with `-h`), subcommand
+    names, sandbox choices, `[bold red]Error:[/bold red]` Rich markup
+    conventions.
+
+- [ ] `test(batman-cli): cover main.py theming` — after theming
+  lands, regression tests using `inspect.getsource(cli_main)` +
+  `inspect.getsource(run_textual_cli_async)` pattern (same as
+  Batches 10 + 11). For each themed string: assert Gotham wording
+  present + upstream wording gone.
+
+- [ ] `docs: mark Phase 9 COMPLETE` — bump this checklist +
+  `phase9-plan.md` status banner + `MEMORY.md` (Current Status →
+  Phase 9 COMPLETE, session summary, NEXT SESSION pointer → **Phase 7
+  (`/batsignal` widget)** — the last widget deferred).
 
 ---
 
