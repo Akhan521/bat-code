@@ -2117,6 +2117,8 @@ async def run_textual_app(
     tools: list[Callable[..., Any] | dict[str, Any]] | None = None,
     sandbox: SandboxBackendProtocol | None = None,
     sandbox_type: str | None = None,
+    persona: str = "batman",
+    no_splash: bool = False,
 ) -> int:
     """Run the Textual application.
 
@@ -2132,6 +2134,8 @@ async def run_textual_app(
         tools: Tools used to create the agent (for model hot-swap)
         sandbox: Sandbox backend (for model hot-swap)
         sandbox_type: Type of sandbox provider (for model hot-swap)
+        persona: Active persona (drives prompt overlay + joker startup modal).
+        no_splash: Skip the BatcaveScreen splash on mount.
 
     Returns:
         The app's return code (0 for success, non-zero for error).
@@ -2148,6 +2152,8 @@ async def run_textual_app(
         tools=tools,
         sandbox=sandbox,
         sandbox_type=sandbox_type,
+        persona=persona,
+        no_splash=no_splash,
     )
     await app.run_async()
     return app.return_code or 0

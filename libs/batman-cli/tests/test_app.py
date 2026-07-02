@@ -743,3 +743,28 @@ def test_user_message_prefix_arrow_uses_gotham_blue() -> None:
     src = inspect.getsource(UserMessage)
     # The "> " prefix should be styled bold gotham_blue.
     assert 'style="bold #1a3a5c"' in src
+
+
+# ---------------------------------------------------------------------------
+# run_textual_app — persona + no_splash pass-through (Phase 9 wiring)
+# ---------------------------------------------------------------------------
+
+
+def test_run_textual_app_accepts_persona_and_no_splash_params() -> None:
+    import inspect
+
+    sig = inspect.signature(app_module.run_textual_app)
+    assert "persona" in sig.parameters
+    assert "no_splash" in sig.parameters
+    # Defaults match BatmanApp's constructor.
+    assert sig.parameters["persona"].default == "batman"
+    assert sig.parameters["no_splash"].default is False
+
+
+def test_run_textual_app_forwards_persona_and_no_splash_to_batman_app() -> None:
+    import inspect
+
+    src = inspect.getsource(app_module.run_textual_app)
+    # Both params should be threaded into the BatmanApp constructor call.
+    assert "persona=persona" in src
+    assert "no_splash=no_splash" in src
