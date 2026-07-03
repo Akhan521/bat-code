@@ -1,7 +1,7 @@
 # Phase 9 — CLI Entry Point (`main.py`) — IN PROGRESS
 
-**Status**: 3 of 6 planned commits landed and pushed to `origin/main`
-(`09b56eb..a1889f7`). **Suite: 278 passed** (33 new + 245 prior; zero
+**Status**: 5 of 6 planned commits landed and pushed to `origin/main`
+(`09b56eb..a40ba9e`). **Suite: 288 passed** (43 new + 245 prior; zero
 `deepagents_cli` references anywhere under `libs/batman-cli/`; only
 remaining `deepagents.*` refs are SDK imports `from deepagents.backends
 import ...` which reference the first-party deepagents package).
@@ -27,9 +27,22 @@ Commits landed this batch (Batch 12 so far):
   `_StdinStub` fixture), `run_textual_cli_async` signature +
   `create_batman_agent` regression + persona/no_splash forwarding, and
   identity regression guards.
+- `259bd22` `feat(batman-cli): theme main.py narrative strings with
+  Gotham voice` — 10 themed surfaces across `run_textual_cli_async` +
+  `cli_main`. Applied Phase 8's locked vocabulary: Cases (thread
+  banner + resume errors + LangSmith + resume hints), Batcomputer
+  (default-model status strings), Villain detected (application
+  error), Left the Batcave (Ctrl+C). Argparse `help=` strings +
+  operational failure prefixes kept verbatim.
+- `a40ba9e` `test(batman-cli): cover main.py theming regression
+  guards` — 10 unit tests using `inspect.getsource(...)` pattern.
+  For each themed string: assert Gotham wording present + upstream
+  wording gone.
 
-Next (commits 4-6, next session): **narrative Gotham theming** on
-user-facing chrome + regression tests + docs closeout.
+Next (commit 6, next session): **docs closeout** — bump this file's
+status banner to COMPLETE with final tally, bump `tasks/todo.md`
+Phase 9 header, rewrite `MEMORY.md` (Current Status → Phase 9
+COMPLETE, NEXT SESSION pointer → Phase 7 `/batsignal` widget).
 
 ---
 
@@ -153,7 +166,7 @@ thread in LangSmith"`, `"Interrupted"` stay verbatim. Deferred to commit
   `cli_main` paths point at `~/.bat-code/` (not `~/.deepagents/`), hint
   strings use `bat-code -r` / `bat-code threads list`.
 
-### Commit 4 — `feat: theme main.py narrative strings` ⏳
+### Commit 4 — `feat: theme main.py narrative strings` ✅ (`259bd22`)
 
 Gotham voice on user-facing chrome only (mirror the pattern from
 Batch 10 / Batch 11):
@@ -202,7 +215,7 @@ Batch 10 / Batch 11):
 - Error format prefixes like `[bold red]Error:[/bold red]` — Rich
   markup convention.
 
-### Commit 5 — `test: cover main.py theming` ⏳
+### Commit 5 — `test: cover main.py theming` ✅ (`a40ba9e`)
 
 Regression tests using `inspect.getsource(cli_main)` +
 `inspect.getsource(run_textual_cli_async)` pattern (same as Batch 10

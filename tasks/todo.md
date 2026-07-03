@@ -629,12 +629,12 @@ mirrors that doc's per-commit shape with check-offs added per commit.
 
 ---
 
-## Phase 9 — CLI Entry Point — IN PROGRESS (3 of 6 commits)
+## Phase 9 — CLI Entry Point — IN PROGRESS (5 of 6 commits)
 
 Full plan: see `tasks/phase9-plan.md` (authoritative). This checklist
 mirrors that doc's per-commit shape with check-offs added per commit.
 
-### Batch 12 — `main.py` (~880 LOC) — 3 of 6 landed
+### Batch 12 — `main.py` (~880 LOC) — 5 of 6 landed
 
 - [x] `feat(batman-cli): extend run_textual_app with persona + no_splash params` (`09b56eb`)
   - Prep commit: `run_textual_app` gains `persona: str = "batman"` and
@@ -705,34 +705,55 @@ mirrors that doc's per-commit shape with check-offs added per commit.
       / `bat-code threads list`.
   - Suite: **278 passed** (33 new + 245 prior).
 
-- [ ] `feat(batman-cli): theme main.py narrative strings` — NEXT
+- [x] `feat(batman-cli): theme main.py narrative strings with Gotham voice` (`259bd22`)
   - Chrome-only Gotham voice pass on `run_textual_cli_async` +
-    `cli_main` user-facing strings. Proposed wording (confirm before
-    applying, mirror Phase 8's locked vocabulary):
-    - `"Resuming thread: "` / `"Starting with thread: "` → case-based
-      voice ("Reopening case" / "Opening new case" proposed).
-    - `"\n\n[yellow]Interrupted[/yellow]"` (Ctrl+C) →
-      `"Left the Batcave."` (mirrors StatusBar hint).
-    - `"No previous thread for ..."` / `"No previous threads..."` /
-      `"Thread 'X' not found"` → case vocabulary.
-    - `"Application error: "` → `"Villain detected: "` (mirrors
-      `app.py` runtime error prefix themed in commit `b307c67`).
-    - `"View this thread in LangSmith: "` → case vocabulary.
-    - `"Resume this thread with:"` → case vocabulary.
-    - Default-model status strings — align to `app.py`'s
-      "Batcomputer" vocabulary for consistency.
-  - **Kept functional (NOT themed)**: argparse `help=` strings (they
-    describe operational behavior users see with `-h`), subcommand
-    names, sandbox choices, `[bold red]Error:[/bold red]` Rich markup
-    conventions.
+    `cli_main`. Applies Phase 8's locked vocabulary (Cases /
+    Batcomputer / Villain detected / Batcave):
+    - Case vocabulary (threads): `"Resuming thread: "` → `"Reopening
+      case: "`; `"Starting with thread: "` → `"Opening new case: "`;
+      `"No previous thread for '...'"` → `"No prior case for
+      '...'"`; `"No previous threads, starting new."` → `"No prior
+      cases on file. Opening a new one."`; `"Thread 'X' not
+      found."` → `"Case 'X' not on file."`; `"Did you mean?"` →
+      `"Similar case files?"`; `"available threads"` →
+      `"available case files"`; `"resume the most recent thread"`
+      → `"reopen the most recent case"`; `"View this thread in
+      LangSmith"` → `"View this case in LangSmith"`; `"Resume this
+      thread with:"` → `"Reopen this case with:"`.
+    - Batcomputer vocabulary (models) — aligns to app.py's `/model`
+      wording: `"Default model {cleared|set to|:}."` → `"Default
+      Batcomputer {cleared|set to|:}."`; `"No default model set."`
+      → `"No default Batcomputer set."`; `"Could not clear/save
+      default model."` → `"Could not clear/save default
+      Batcomputer."`.
+    - Villain / Batcave (errors / exit): `"\nApplication error: "`
+      → `"\nVillain detected: "` (mirrors app.py runtime error
+      prefix themed in commit `b307c67`); Ctrl+C
+      `"[yellow]Interrupted[/yellow]"` → `"[yellow]Left the
+      Batcave.[/yellow]"` (mirrors StatusBar's "Ctrl+C to leave the
+      Batcave" hint themed in Phase 8).
+  - **Kept functional (NOT themed)**: argparse `help=` strings
+    (they describe operational behavior users see with `-h`),
+    subcommand names, sandbox choices, `[bold red]Error:[/bold
+    red]` Rich markup prefix convention, `"❌ Missing required
+    CLI dependencies!"` (startup diagnostic), `"❌ Failed to
+    create agent:"` / `"❌ Sandbox creation failed"` (operational
+    startup failures), all `logger.debug`/`warning` messages
+    (internal diagnostics).
 
-- [ ] `test(batman-cli): cover main.py theming` — after theming
-  lands, regression tests using `inspect.getsource(cli_main)` +
-  `inspect.getsource(run_textual_cli_async)` pattern (same as
-  Batches 10 + 11). For each themed string: assert Gotham wording
-  present + upstream wording gone.
+- [x] `test(batman-cli): cover main.py theming regression guards` (`a40ba9e`)
+  - 10 unit tests appended to `tests/test_main.py` using
+    `inspect.getsource(...)` pattern (same as Batches 10 + 11
+    theming). Covers all 10 themed surfaces above; for each: assert
+    Gotham wording present + upstream wording gone. One test
+    (`test_cli_main_resume_hints_use_case_vocabulary`) splits its
+    assertion across two adjacent string literals because the source
+    wraps `"reopen the most " / "recent case."` on separate lines
+    (implicit string concat).
+  - Suite: **288 passed** (10 new + 278 prior). Zero
+    `deepagents_cli` references remain in `libs/batman-cli/` source.
 
-- [ ] `docs: mark Phase 9 COMPLETE` — bump this checklist +
+- [ ] `docs: mark Phase 9 COMPLETE` — LAST. Bump this checklist +
   `phase9-plan.md` status banner + `MEMORY.md` (Current Status →
   Phase 9 COMPLETE, session summary, NEXT SESSION pointer → **Phase 7
   (`/batsignal` widget)** — the last widget deferred).
