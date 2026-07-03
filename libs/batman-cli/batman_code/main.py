@@ -430,11 +430,11 @@ async def run_textual_cli_async(
 
     # Show thread info
     if is_resumed:
-        msg = Text("Resuming thread: ", style="green")
+        msg = Text("Reopening case: ", style="green")
         msg.append(str(thread_id))
         console.print(msg)
     else:
-        msg = Text("Starting with thread: ", style="dim")
+        msg = Text("Opening new case: ", style="dim")
         msg.append(str(thread_id), style="dim")
         console.print(msg)
 
@@ -686,11 +686,11 @@ def cli_main() -> None:
             from batman_code.model_config import clear_default_model
 
             if clear_default_model():
-                console.print("Default model cleared.")
+                console.print("Default Batcomputer cleared.")
             else:
                 console.print(
-                    "[bold red]Error:[/bold red] Could not clear default model. "
-                    "Check permissions for ~/.bat-code/"
+                    "[bold red]Error:[/bold red] Could not clear default "
+                    "Batcomputer. Check permissions for ~/.bat-code/"
                 )
                 sys.exit(1)
             sys.exit(0)
@@ -704,9 +704,9 @@ def cli_main() -> None:
             if args.default_model == "__SHOW__":
                 config = ModelConfig.load()
                 if config.default_model:
-                    console.print(f"Default model: {config.default_model}")
+                    console.print(f"Default Batcomputer: {config.default_model}")
                 else:
-                    console.print("No default model set.")
+                    console.print("No default Batcomputer set.")
                 sys.exit(0)
 
             model_spec = args.default_model
@@ -721,11 +721,11 @@ def cli_main() -> None:
                     model_spec = f"{provider}:{model_spec}"
 
             if save_default_model(model_spec):
-                console.print(f"Default model set to {model_spec}")
+                console.print(f"Default Batcomputer set to {model_spec}")
             else:
                 console.print(
-                    "[bold red]Error:[/bold red] Could not save default model. "
-                    "Check permissions for ~/.bat-code/"
+                    "[bold red]Error:[/bold red] Could not save default "
+                    "Batcomputer. Check permissions for ~/.bat-code/"
                 )
                 sys.exit(1)
             sys.exit(0)
@@ -789,11 +789,14 @@ def cli_main() -> None:
                         args.persona = agent_name
                 else:
                     if agent_filter:
-                        msg = Text("No previous thread for '", style="yellow")
+                        msg = Text("No prior case for '", style="yellow")
                         msg.append(args.persona)
-                        msg.append("', starting new.", style="yellow")
+                        msg.append("', opening a new one.", style="yellow")
                     else:
-                        msg = Text("No previous threads, starting new.", style="yellow")
+                        msg = Text(
+                            "No prior cases on file. Opening a new one.",
+                            style="yellow",
+                        )
                     console.print(msg)
 
             elif args.resume_thread:
@@ -806,16 +809,16 @@ def cli_main() -> None:
                         if agent_name:
                             args.persona = agent_name
                 else:
-                    error_msg = Text("Thread '", style="red")
+                    error_msg = Text("Case '", style="red")
                     error_msg.append(args.resume_thread)
-                    error_msg.append("' not found.", style="red")
+                    error_msg.append("' not on file.", style="red")
                     console.print(error_msg)
 
                     # Check for similar thread IDs
                     similar = asyncio.run(find_similar_threads(args.resume_thread))
                     if similar:
                         console.print()
-                        console.print("[yellow]Did you mean?[/yellow]")
+                        console.print("[yellow]Similar case files?[/yellow]")
                         for tid in similar:
                             hint = Text("  bat-code -r ", style="cyan")
                             hint.append(str(tid), style="cyan")
@@ -824,11 +827,11 @@ def cli_main() -> None:
 
                     console.print(
                         "[dim]Use 'bat-code threads list' to see "
-                        "available threads.[/dim]"
+                        "available case files.[/dim]"
                     )
                     console.print(
-                        "[dim]Use 'bat-code -r' to resume the most "
-                        "recent thread.[/dim]"
+                        "[dim]Use 'bat-code -r' to reopen the most "
+                        "recent case.[/dim]"
                     )
                     sys.exit(1)
 
@@ -856,7 +859,7 @@ def cli_main() -> None:
                     )
                 )
             except Exception as e:
-                error_msg = Text("\nApplication error: ", style="red")
+                error_msg = Text("\nVillain detected: ", style="red")
                 error_msg.append(str(e))
                 console.print(error_msg)
                 console.print(Text(traceback.format_exc(), style="dim"))
@@ -868,7 +871,7 @@ def cli_main() -> None:
                 thread_url = build_langsmith_thread_url(thread_id)
                 if thread_url and asyncio.run(thread_exists(thread_id)):
                     console.print()
-                    ls_hint = Text("View this thread in LangSmith: ", style="dim")
+                    ls_hint = Text("View this case in LangSmith: ", style="dim")
                     ls_hint.append(
                         thread_url,
                         style=Style(dim=True, link=thread_url),
@@ -883,13 +886,13 @@ def cli_main() -> None:
             # Show resume hint on exit (only for new threads with successful exit)
             if thread_id and not is_resumed and return_code == 0:
                 console.print()
-                console.print("[dim]Resume this thread with:[/dim]")
+                console.print("[dim]Reopen this case with:[/dim]")
                 hint = Text("bat-code -r ", style="cyan")
                 hint.append(str(thread_id), style="cyan")
                 console.print(hint)
     except KeyboardInterrupt:
         # Clean exit on Ctrl+C - suppress ugly traceback
-        console.print("\n\n[yellow]Interrupted[/yellow]")
+        console.print("\n\n[yellow]Left the Batcave.[/yellow]")
         sys.exit(0)
 
 
