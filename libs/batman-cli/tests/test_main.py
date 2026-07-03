@@ -375,3 +375,106 @@ def test_cli_main_hints_use_bat_code_binary_name() -> None:
     # Regression against upstream binary name in hint strings.
     assert "deepagents -r " not in src
     assert "deepagents threads list" not in src
+
+
+# ---------------------------------------------------------------------------
+# Theming — Gotham voice on user-facing chrome
+#
+# Uses inspect.getsource(...) pattern (same as Batches 10 + 11 theming
+# regression tests). For each themed surface: assert the Gotham wording
+# is present in the source AND the upstream wording is gone.
+# ---------------------------------------------------------------------------
+
+
+def test_run_textual_cli_async_uses_case_vocabulary_for_thread_banner() -> None:
+    src = inspect.getsource(run_textual_cli_async)
+    assert '"Reopening case: "' in src
+    assert '"Opening new case: "' in src
+    # Regression against upstream wording.
+    assert '"Resuming thread: "' not in src
+    assert '"Starting with thread: "' not in src
+
+
+def test_cli_main_clear_default_uses_batcomputer_vocabulary() -> None:
+    src = inspect.getsource(main_module.cli_main)
+    assert '"Default Batcomputer cleared."' in src
+    assert "Could not clear default " in src and "Batcomputer" in src
+    # Regression against upstream wording.
+    assert '"Default model cleared."' not in src
+    assert "Could not clear default model" not in src
+
+
+def test_cli_main_show_default_uses_batcomputer_vocabulary() -> None:
+    src = inspect.getsource(main_module.cli_main)
+    assert '"Default Batcomputer: {config.default_model}"' in src
+    assert '"No default Batcomputer set."' in src
+    # Regression against upstream wording.
+    assert '"Default model: {config.default_model}"' not in src
+    assert '"No default model set."' not in src
+
+
+def test_cli_main_set_default_uses_batcomputer_vocabulary() -> None:
+    src = inspect.getsource(main_module.cli_main)
+    assert '"Default Batcomputer set to {model_spec}"' in src
+    assert "Could not save default " in src and "Batcomputer" in src
+    # Regression against upstream wording.
+    assert '"Default model set to {model_spec}"' not in src
+    assert "Could not save default model" not in src
+
+
+def test_cli_main_no_previous_case_wording() -> None:
+    src = inspect.getsource(main_module.cli_main)
+    # Filtered-by-persona branch.
+    assert '"No prior case for \'"' in src
+    assert '"\', opening a new one."' in src
+    # Unfiltered branch.
+    assert '"No prior cases on file. Opening a new one."' in src
+    # Regression against upstream wording.
+    assert '"No previous thread for \'"' not in src
+    assert '"No previous threads, starting new."' not in src
+
+
+def test_cli_main_thread_not_found_uses_case_vocabulary() -> None:
+    src = inspect.getsource(main_module.cli_main)
+    assert '"Case \'"' in src
+    assert '"\' not on file."' in src
+    assert '"[yellow]Similar case files?[/yellow]"' in src
+    # Regression against upstream wording.
+    assert '"Thread \'"' not in src
+    assert '"\' not found."' not in src
+    assert "Did you mean?" not in src
+
+
+def test_cli_main_resume_hints_use_case_vocabulary() -> None:
+    src = inspect.getsource(main_module.cli_main)
+    assert "available case files." in src
+    # "reopen the most " and "recent case." live on adjacent lines
+    # (implicit string concat), so match each half separately.
+    assert "reopen the most" in src
+    assert "recent case." in src
+    assert "Reopen this case with:" in src
+    # Regression against upstream wording.
+    assert "available threads." not in src
+    assert "resume the most recent thread." not in src
+    assert "Resume this thread with:" not in src
+
+
+def test_cli_main_application_error_uses_villain_detected() -> None:
+    src = inspect.getsource(main_module.cli_main)
+    assert '"\\nVillain detected: "' in src
+    # Regression against upstream wording.
+    assert '"\\nApplication error: "' not in src
+
+
+def test_cli_main_langsmith_hint_uses_case_vocabulary() -> None:
+    src = inspect.getsource(main_module.cli_main)
+    assert '"View this case in LangSmith: "' in src
+    # Regression against upstream wording.
+    assert '"View this thread in LangSmith: "' not in src
+
+
+def test_cli_main_ctrl_c_uses_left_the_batcave() -> None:
+    src = inspect.getsource(main_module.cli_main)
+    assert "Left the Batcave." in src
+    # Regression against upstream wording.
+    assert "[yellow]Interrupted[/yellow]" not in src
