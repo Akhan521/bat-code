@@ -419,8 +419,9 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ## Phase 8 — Textual Adapter & Main App — COMPLETE
 
-Full plan: see `tasks/phase8-plan.md` (authoritative). This checklist
-mirrors that doc's per-commit shape with check-offs added per commit.
+Full plan: see `tasks/archive/phase8-plan.md` (archived on close).
+This checklist mirrors that doc's per-commit shape with check-offs
+added per commit.
 
 ### Batch 10 — `textual_adapter.py` (895 LOC) — COMPLETE
 
@@ -631,8 +632,9 @@ mirrors that doc's per-commit shape with check-offs added per commit.
 
 ## Phase 9 — CLI Entry Point — COMPLETE
 
-Full plan: see `tasks/phase9-plan.md` (authoritative). This checklist
-mirrors that doc's per-commit shape with check-offs added per commit.
+Full plan: see `tasks/archive/phase9-plan.md` (archived on close).
+This checklist mirrors that doc's per-commit shape with check-offs
+added per commit.
 
 ### Batch 12 — `main.py` (~880 LOC) — 6 of 6 landed
 

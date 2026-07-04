@@ -46,15 +46,18 @@ rendered as a background layer behind the chat. Flickers at irregular
 intervals simulating a real spotlight. Pulses between dim and bright
 gold.
 
-**Dependencies:** none (pure Textual widget). Can be built once
-`app.py` has a layered chat container (Phase 8).
+**Dependencies:** met. Phase 8 shipped the layered chat container in
+`app.py` — the batsignal overlay can slot into the `batsignal` CSS
+layer already declared in `app.tcss`.
 
 ### 3. `/batsignal` dispatch handler
 
-**Where:** wherever slash-command dispatch lives (likely `app.py` or a
-new `batman_code/commands.py` module — TBD in Phase 8/9).
+**Where:** `app.py::_handle_command` — the if-elif chain (seam
+identified during Phase 8 exploration). One-line registration:
+`elif command == "/batsignal": ...`.
 
 **What it does:** toggles the BatSignalOverlay widget's visibility.
+App stores `_batsignal_active: bool` state.
 
 ### 4. Other Phase 7 nice-to-haves (per `CLAUDE.md` Phase 2 spec)
 
@@ -88,14 +91,9 @@ revisited. Not blocking anything.
 
 ## Future Phases (high-level)
 
-- **Phase 8** — `textual_adapter.py` (streaming → UI bridge) + `app.py`
-  (BatmanApp shell, layered containers, mode toggling). All widgets get
-  wired together here.
-- **Phase 9** — `main.py` CLI entry, `--persona` flag, `--no-splash`,
-  argparse, `bat-code` console-scripts entry point.
-- **Phase 7** — bat-signal overlay + easter eggs (see above).
+- **Phase 7** — bat-signal overlay + easter eggs (see above). Next up.
 - **Phase 10** — end-to-end verification, smoke-test against real
   agent, persona switching, splash skip, `/batsignal` toggle.
 
 Implementation order (from `MEMORY.md`):
-Phase 0 → 6 → 1 → 2 → 3 → 4 → **5** → 8 → 9 → 7 → 10.
+Phase 0 → 6 → 1 → 2 → 3 → 4 → 5 → 8 → 9 → **7** → 10.
