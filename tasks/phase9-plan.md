@@ -1,12 +1,17 @@
-# Phase 9 — CLI Entry Point (`main.py`) — IN PROGRESS
+# Phase 9 — CLI Entry Point (`main.py`) — COMPLETE
 
-**Status**: 5 of 6 planned commits landed and pushed to `origin/main`
-(`09b56eb..a40ba9e`). **Suite: 288 passed** (43 new + 245 prior; zero
-`deepagents_cli` references anywhere under `libs/batman-cli/`; only
+**Status**: All 6 planned commits landed and pushed to `origin/main`
+(`09b56eb..<this commit>`). **Suite: 288 passed** (45 new + 243 prior;
+zero `deepagents_cli` references anywhere under `libs/batman-cli/`; only
 remaining `deepagents.*` refs are SDK imports `from deepagents.backends
 import ...` which reference the first-party deepagents package).
 
-Commits landed this batch (Batch 12 so far):
+**Runtime status**: `bat-code` is now end-to-end launchable. `bat-code
+-v` prints `bat-code 0.1.0`; `bat-code --help` renders the persona
+flag with 5 choices; `bat-code -p invalid` is rejected by argparse.
+Interactive Textual end-to-end verification deferred to Phase 10.
+
+Commits landed in Batch 12:
 
 - `09b56eb` `feat(batman-cli): extend run_textual_app with persona +
   no_splash params` — prep work on `app.py`; both params were added to
@@ -38,11 +43,17 @@ Commits landed this batch (Batch 12 so far):
   guards` — 10 unit tests using `inspect.getsource(...)` pattern.
   For each themed string: assert Gotham wording present + upstream
   wording gone.
+- `<this commit>` `docs: mark Phase 9 COMPLETE` — bumps this file's
+  status banner to COMPLETE, bumps `tasks/todo.md` Phase 9 header,
+  consolidates the two Phase 9 session summaries in `MEMORY.md`
+  into one COMPLETE block, and rewrites the NEXT SESSION pointer to
+  **Phase 7** (`/batsignal` widget — the last widget still deferred
+  per `tasks/deferred.md`).
 
-Next (commit 6, next session): **docs closeout** — bump this file's
-status banner to COMPLETE with final tally, bump `tasks/todo.md`
-Phase 9 header, rewrite `MEMORY.md` (Current Status → Phase 9
-COMPLETE, NEXT SESSION pointer → Phase 7 `/batsignal` widget).
+**Next: Phase 7** (`/batsignal` widget + one-line dispatch registration
+in `app.py`'s `_handle_command` if-elif chain). After Phase 7 lands,
+Phase 10 verification (interactive terminal testing) closes the
+project.
 
 ---
 
@@ -223,16 +234,25 @@ and Batch 11 theming). For each themed string:
 - Assert the new Gotham wording appears in the source.
 - Assert the upstream wording is gone.
 
-### Commit 6 — `docs: mark Phase 9 COMPLETE` ⏳
+### Commit 6 — `docs: mark Phase 9 COMPLETE` ✅ (this commit)
 
-- Bump `tasks/todo.md` Phase 9 section with all 6 commit hashes.
-- Update this file's status banner to "COMPLETE" with the final tally.
-- Update `MEMORY.md`:
-  - Current Status: `[x] Phase 9: CLI Entry Point — COMPLETE`.
-  - Session summary block with commit list + vocabulary decisions +
-    key learnings.
-  - NEXT SESSION pointer rewritten for **Phase 7** (`/batsignal` widget
-    — the last widget still deferred).
+- Bumped `tasks/todo.md` Phase 9 section: header → COMPLETE, Batch 12
+  → 6 of 6, commit 6 checked off with its scope + final tally.
+- Bumped this file's status banner to COMPLETE with the final commit
+  range and 288-passed suite count.
+- Updated `MEMORY.md`:
+  - Current Status: `[~] Phase 9: IN PROGRESS (5 of 6)` → `[x]
+    Phase 9: CLI Entry Point — COMPLETE`.
+  - Consolidated the two Phase 9 session summaries (commits 1-3 from
+    2026-07-01 and commits 4-5 from 2026-07-02) into one **Phase 9
+    COMPLETE** block that covers all six commits, the persona
+    semantics decision, the vocabulary map, and the runtime
+    verification.
+  - NEXT SESSION pointer rewritten for **Phase 7** (`/batsignal`
+    widget — the last widget still deferred per `tasks/deferred.md`).
+    Dispatch seam: `app.py` `_handle_command`'s if-elif chain
+    (already identified in Phase 8); Phase 7 lands the widget + adds
+    one elif branch.
 
 ---
 

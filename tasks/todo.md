@@ -629,12 +629,12 @@ mirrors that doc's per-commit shape with check-offs added per commit.
 
 ---
 
-## Phase 9 — CLI Entry Point — IN PROGRESS (5 of 6 commits)
+## Phase 9 — CLI Entry Point — COMPLETE
 
 Full plan: see `tasks/phase9-plan.md` (authoritative). This checklist
 mirrors that doc's per-commit shape with check-offs added per commit.
 
-### Batch 12 — `main.py` (~880 LOC) — 5 of 6 landed
+### Batch 12 — `main.py` (~880 LOC) — 6 of 6 landed
 
 - [x] `feat(batman-cli): extend run_textual_app with persona + no_splash params` (`09b56eb`)
   - Prep commit: `run_textual_app` gains `persona: str = "batman"` and
@@ -753,10 +753,22 @@ mirrors that doc's per-commit shape with check-offs added per commit.
   - Suite: **288 passed** (10 new + 278 prior). Zero
     `deepagents_cli` references remain in `libs/batman-cli/` source.
 
-- [ ] `docs: mark Phase 9 COMPLETE` — LAST. Bump this checklist +
-  `phase9-plan.md` status banner + `MEMORY.md` (Current Status →
-  Phase 9 COMPLETE, session summary, NEXT SESSION pointer → **Phase 7
-  (`/batsignal` widget)** — the last widget deferred).
+- [x] `docs: mark Phase 9 COMPLETE` (this commit)
+  - Bumps this checklist (Phase 9 header → COMPLETE, Batch 12
+    header → 6 of 6, commit 6 checked off).
+  - Bumps `tasks/phase9-plan.md` status banner ("5 of 6 commits
+    landed" → COMPLETE) with the final commit range and total tally.
+  - Updates `MEMORY.md`: Current Status → `[x] Phase 9: COMPLETE`;
+    consolidates the two Phase 9 session summaries (commits 1-3 and
+    4-5) into a single Phase 9 COMPLETE block; **rewrites NEXT
+    SESSION pointer to Phase 7** (`/batsignal` widget — the last
+    widget still deferred per `tasks/deferred.md`).
+
+**Phase 9 tally**: 6 commits (`09b56eb..<this>`), 45 unit tests
+added (2 + 33 + 10), **288 tests passing across the suite**, zero
+`deepagents_cli` references in source (only remaining `deepagents.*`
+refs are SDK imports `from deepagents.backends import ...`, which are
+first-party deepagents package imports).
 
 ---
 
