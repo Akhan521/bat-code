@@ -7,66 +7,30 @@ future-us doesn't re-litigate the decision.
 
 ---
 
-## Phase 7 — Bat-Signal & Easter Eggs
+## Phase 7 — `/batsignal` core is now PLANNED (see `tasks/phase7-plan.md`)
 
-### 1. `/batsignal` slash command — autocomplete entry
+The three concrete deliverables previously tracked here —
+`SLASH_COMMANDS` autocomplete entry, `widgets/batsignal.py` widget,
+and the `app.py::_handle_command` dispatch handler — are now covered
+by the Phase 7 plan doc. See `tasks/phase7-plan.md` for the full
+Batch 13 shape (4 commits: widget → wiring → tests → docs closeout).
 
-**Where:** `libs/batman-cli/batman_code/widgets/autocomplete.py`,
-`SLASH_COMMANDS` constant.
+Historical note: these items lived here from the start of the port
+until Phase 9 closed, since Phase 7 was blocked on Phase 8's layered
+chat container and dispatch seam.
 
-**Current state:** intentionally absent. Source's 12 commands ported
-verbatim:
-```python
-SLASH_COMMANDS = [
-    ("/help", ...), ("/changelog", ...), ("/clear", ...),
-    ("/docs", ...), ("/feedback", ...), ("/model", ...),
-    ("/remember", ...), ("/quit", ...), ("/tokens", ...),
-    ("/threads", ...), ("/trace", ...), ("/version", ...),
-]
-```
+## Phase 7 — Easter eggs backlog (unscoped)
 
-**When to add:** Phase 7 — alongside the `widgets/batsignal.py` widget
-and the dispatch handler.
-
-**What to add:**
-```python
-("/batsignal", "Toggle bat-signal overlay"),
-```
-
-**Why deferred:** adding the autocomplete entry without the handler/widget
-would surface a broken command (user picks `/batsignal`, nothing happens
-or it errors). Ship them together.
-
-### 2. `widgets/batsignal.py` widget
-
-**Where:** `libs/batman-cli/batman_code/widgets/batsignal.py` (NEW).
-
-**Spec (from `CLAUDE.md` Phase 1):** flickering ASCII bat-symbol overlay
-rendered as a background layer behind the chat. Flickers at irregular
-intervals simulating a real spotlight. Pulses between dim and bright
-gold.
-
-**Dependencies:** met. Phase 8 shipped the layered chat container in
-`app.py` — the batsignal overlay can slot into the `batsignal` CSS
-layer already declared in `app.tcss`.
-
-### 3. `/batsignal` dispatch handler
-
-**Where:** `app.py::_handle_command` — the if-elif chain (seam
-identified during Phase 8 exploration). One-line registration:
-`elif command == "/batsignal": ...`.
-
-**What it does:** toggles the BatSignalOverlay widget's visibility.
-App stores `_batsignal_active: bool` state.
-
-### 4. Other Phase 7 nice-to-haves (per `CLAUDE.md` Phase 2 spec)
+Per `CLAUDE.md` Phase 2 spec, still parked pending collaborative
+planning once the `/batsignal` core lands:
 
 - Villain-of-the-day easter eggs
 - Gotham weather status bar (extra slot in `status.py`)
 - Additional custom loading screens beyond `batcave.py`
 - Additional custom slash commands beyond `/batsignal`
 
-These are unscoped — to be planned collaboratively when Phase 7 starts.
+These are unscoped — to be planned collaboratively when Phase 7 core
+closes.
 
 ---
 

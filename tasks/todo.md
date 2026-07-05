@@ -390,30 +390,98 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 7 — Bat-Signal Widget
+## Phase 7 — Bat-Signal Widget — PLANNED
 
-- [ ] Write `batman_code/widgets/batsignal.py`
-  - Class: `BatSignalOverlay(Widget)` — floated layer, `layer: batsignal` in CSS
-  - Renders large ASCII bat-symbol centered in the terminal
-  - **Flicker behavior:**
-    - Uses `set_interval(random_interval, self._flicker)` with jittered timing (0.3–1.5s)
-    - Each tick: randomly choose brightness level from `["dim", "normal", "bright"]`
-    - Dim: render bat in `#2d2d2d`, Bright: render in `#f5c518`, Normal: `#b8960c`
-    - Occasional full-off frame (blank) then snap back — simulates real spotlight flicker
-  - Positioned: centered, pointer-events none (doesn't block chat interaction)
-  - CSS: `layer: batsignal; opacity: 0.35;` so chat content shows through
-  - Toggled by `/batsignal` command in `input.py`
-  - App stores `_batsignal_active: bool` state
-  - ASCII bat-symbol constant (large, ~10 rows tall):
-    ```
-         _  _
-       _/ \/ \_
-      / /\  /\ \
-     / /  \/  \ \
-    /_/   /\   \_\
-         /  \
-        /    \
-    ```
+Full plan: see `tasks/phase7-plan.md` (authoritative). This checklist
+mirrors that doc's per-commit shape; check-offs happen per commit.
+
+### Batch 13 — `/batsignal` core (widget + wiring + tests)
+
+- [ ] `feat(batman-cli): add BatSignalOverlay widget with flicker animation`
+  - New file `batman_code/widgets/batsignal.py`:
+    - `BAT_SYMBOL_ASCII` constant (7-line bat symbol from CLAUDE.md
+      Phase 1 spec)
+    - `_FLICKER_COLORS = {"dim": "#2d2d2d", "normal": "#b8960c",
+      "bright": "#f5c518"}`
+    - `_FLICKER_STATES = ("dim", "normal", "bright", "off")` — includes
+      rare "off" state for the blank-frame spotlight flicker effect
+    - `_FLICKER_INTERVAL_RANGE = (0.3, 1.5)` seconds
+    - `class BatSignalOverlay(Widget)` — `set_interval` loop calls
+      `_flicker()` which picks a new state + reschedules with a
+      jittered interval. `render()` returns colored `Text` or empty
+      string when state == "off".
+    - Pure helpers `_pick_next_state()` and `_next_interval()` extracted
+      as testable seams (mirrors the `_build_title()` pattern from
+      model_selector / thread_selector).
+  - **No re-export** from `widgets/__init__.py` — deep import per source
+    convention (matches approval.py, autocomplete.py, thread_selector.py).
+  - **Bundled unit tests** (if <30 LOC per `tasks/lessons.md`):
+    `_pick_next_state()` returns a valid state, `_next_interval()`
+    stays in `[0.3, 1.5]`, `render()` colors match state, ASCII
+    constant is exactly the spec's 7-line string.
+
+- [ ] `feat(batman-cli): wire /batsignal command dispatch + autocomplete`
+  - `widgets/autocomplete.py::SLASH_COMMANDS` — append 13th entry
+    `("/batsignal", "Toggle bat-signal overlay")`.
+  - `app.py`:
+    - Import `BatSignalOverlay` from
+      `batman_code.widgets.batsignal`.
+    - Add `self._batsignal_overlay: BatSignalOverlay | None = None`
+      to `BatmanApp.__init__`. **No separate `_batsignal_active`
+      bool** — the widget reference is the state (None = off, else =
+      on). Simpler + avoids drift.
+    - Add elif branch to `_handle_command`:
+      `elif cmd == "/batsignal": await self._toggle_batsignal(command)`.
+    - Implement `_toggle_batsignal(command: str)`:
+      - Mount `UserMessage(command)` first (sibling handler pattern).
+      - If overlay is None → create + mount to Screen + confirm with
+        themed `AppMessage("Bat-signal engaged.")` (or similar —
+        confirm exact wording at commit review).
+      - Else → `await self._batsignal_overlay.remove()`, null the
+        reference, confirm with themed `AppMessage("Bat-signal stood
+        down.")`.
+    - Await `.remove()` before nulling to avoid a double-toggle race
+      leaking an overlay.
+
+- [ ] `test(batman-cli): cover /batsignal wiring + autocomplete registration`
+  - New `tests/widgets/test_autocomplete.py` (autocomplete.py was
+    deep-import verbatim in Phase 5 — first test file for it):
+    - `/batsignal` present in `SLASH_COMMANDS` with the exact
+      description
+    - `SLASH_COMMANDS` length is 13 (regression against accidental
+      entry removal)
+  - Extend `tests/test_app.py`:
+    - `_handle_command` source contains `"/batsignal"` +
+      `_toggle_batsignal` call
+    - `_toggle_batsignal` source contains the themed AppMessage
+      strings ("Bat-signal engaged." + "Bat-signal stood down.") —
+      regression guards for wording
+    - `BatmanApp.__init__` initializes `_batsignal_overlay` to None
+      (source-inspection check, matches the pattern for other kw-only
+      param defaults in test_app.py)
+
+- [ ] `docs: mark Phase 7 COMPLETE` — LAST
+  - Bump this checklist (Phase 7 header → COMPLETE, all 4 commits
+    checked off with hashes).
+  - Bump `tasks/phase7-plan.md` status banner to COMPLETE with final
+    commit range + total tally.
+  - Update `MEMORY.md` topic files:
+    - `project_status.md`: Phase 7 → COMPLETE, mark **Phase 10
+      (end-to-end verification) NEXT**.
+    - `project_deferred_work.md`: remove `/batsignal` core from
+      "deferred"; keep the easter-eggs backlog.
+    - `project_key_files.md`: add `widgets/batsignal.py` entry.
+    - `MEMORY.md` index if any topic-file one-liner needs refreshing.
+  - `git mv tasks/phase7-plan.md tasks/archive/` (matches Phase
+    5/8/9 archive pattern). Update `tasks/archive/README.md` with the
+    Phase 7 row + close-out commit hash.
+
+### Out of scope (parked for future planning)
+
+- **Easter eggs**: villain-of-the-day, Gotham weather status slot,
+  additional loading screens, additional slash commands. These stay
+  in `tasks/deferred.md` under "Easter eggs backlog" — to be planned
+  collaboratively once `/batsignal` core lands.
 
 ---
 
