@@ -105,6 +105,7 @@ SLASH_COMMANDS: list[tuple[str, str]] = [
     ("/threads", "Browse and resume previous threads"),
     ("/trace", "Open current thread in LangSmith"),
     ("/version", "Show version"),
+    ("/batsignal", "Toggle bat-signal overlay"),
 ]
 """Built-in slash commands with descriptions."""
 

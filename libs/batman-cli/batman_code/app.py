@@ -50,6 +50,7 @@ from batman_code.model_config import (
 from batman_code.textual_adapter import TextualUIAdapter, execute_task_textual
 from batman_code.widgets.approval import ApprovalMenu
 from batman_code.widgets.batcave import BatcaveScreen
+from batman_code.widgets.batsignal import BatSignalOverlay
 from batman_code.widgets.chat_input import ChatInput
 from batman_code.widgets.loading import LoadingWidget
 from batman_code.widgets.message_store import MessageData, MessageStore
@@ -510,6 +511,9 @@ class BatmanApp(App):
         self._processing_pending = False
         # Message virtualization store
         self._message_store = MessageStore()
+        # Bat-signal overlay — the reference itself is the state:
+        # None = off, else = mounted. Toggled by /batsignal.
+        self._batsignal_overlay: BatSignalOverlay | None = None
 
     def compose(self) -> ComposeResult:
         """Compose the application layout.
@@ -1262,6 +1266,8 @@ class BatmanApp(App):
                 await self._switch_model(model_arg)
             else:
                 await self._show_model_selector()
+        elif cmd == "/batsignal":
+            await self._toggle_batsignal(command)
         else:
             await self._mount_message(UserMessage(command))
             await self._mount_message(AppMessage(f"Unrecognized Batcomputer command: {cmd}"))
@@ -1278,6 +1284,28 @@ class BatmanApp(App):
                 pass
 
         self.call_after_refresh(_scroll_after_command)
+
+    async def _toggle_batsignal(self, command: str) -> None:
+        """Toggle the bat-signal overlay on / off.
+
+        Mounts a new BatSignalOverlay on first call, removes it on the
+        second. The overlay reference itself is the state (None = off).
+
+        Args:
+            command: The raw slash command (used for the echo message).
+        """
+        await self._mount_message(UserMessage(command))
+        if self._batsignal_overlay is None:
+            overlay = BatSignalOverlay(id="batsignal-overlay")
+            await self.mount(overlay)
+            self._batsignal_overlay = overlay
+            await self._mount_message(AppMessage("Bat-signal engaged."))
+        else:
+            # Await removal before nulling the reference so a rapid
+            # double-toggle can't leak a second overlay.
+            await self._batsignal_overlay.remove()
+            self._batsignal_overlay = None
+            await self._mount_message(AppMessage("Bat-signal stood down."))
 
     async def _handle_user_message(self, message: str) -> None:
         """Handle a user message to send to the agent.
