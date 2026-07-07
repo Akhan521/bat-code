@@ -768,3 +768,85 @@ def test_run_textual_app_forwards_persona_and_no_splash_to_batman_app() -> None:
     # Both params should be threaded into the BatmanApp constructor call.
     assert "persona=persona" in src
     assert "no_splash=no_splash" in src
+
+
+# ---------------------------------------------------------------------------
+# /batsignal wiring — Phase 7 Batch 13 commit 2 regression guards
+# ---------------------------------------------------------------------------
+
+
+def test_batman_app_imports_batsignal_overlay() -> None:
+    import inspect
+
+    src = inspect.getsource(app_module)
+    assert "from batman_code.widgets.batsignal import BatSignalOverlay" in src
+
+
+def test_batman_app_init_batsignal_overlay_defaults_to_none() -> None:
+    import inspect
+
+    src = inspect.getsource(BatmanApp.__init__)
+    # State is the widget reference itself (None = off, else = on) —
+    # no separate _batsignal_active bool.
+    assert "self._batsignal_overlay: BatSignalOverlay | None = None" in src
+    assert "_batsignal_active" not in src
+
+
+def test_handle_command_dispatches_batsignal_to_toggle() -> None:
+    import inspect
+
+    src = inspect.getsource(BatmanApp._handle_command)
+    assert 'elif cmd == "/batsignal":' in src
+    assert "await self._toggle_batsignal(command)" in src
+
+
+def test_toggle_batsignal_method_exists() -> None:
+    assert hasattr(BatmanApp, "_toggle_batsignal")
+
+
+def test_toggle_batsignal_echoes_user_message_first() -> None:
+    import inspect
+
+    src = inspect.getsource(BatmanApp._toggle_batsignal)
+    # Matches sibling handler convention — echo the command as a
+    # UserMessage before the app-level confirmation.
+    assert "await self._mount_message(UserMessage(command))" in src
+
+
+def test_toggle_batsignal_engaged_message_uses_locked_wording() -> None:
+    import inspect
+
+    src = inspect.getsource(BatmanApp._toggle_batsignal)
+    assert '"Bat-signal engaged."' in src
+
+
+def test_toggle_batsignal_stood_down_message_uses_locked_wording() -> None:
+    import inspect
+
+    src = inspect.getsource(BatmanApp._toggle_batsignal)
+    # "stood down" mirrors Phase 8's "The Dark Knight is standing
+    # down" voice — regression guard against wording drift.
+    assert '"Bat-signal stood down."' in src
+
+
+def test_toggle_batsignal_mounts_with_batsignal_overlay_id() -> None:
+    import inspect
+
+    src = inspect.getsource(BatmanApp._toggle_batsignal)
+    # The id lets the widget pick up #batsignal-overlay styling
+    # already declared in app.tcss.
+    assert 'id="batsignal-overlay"' in src
+
+
+def test_toggle_batsignal_awaits_remove_before_nulling_reference() -> None:
+    import inspect
+
+    src = inspect.getsource(BatmanApp._toggle_batsignal)
+    # Double-toggle race guard: if we null the reference before
+    # awaiting removal, a rapid second /batsignal could mount a
+    # second overlay before the first finishes tearing down.
+    remove_pos = src.find("await self._batsignal_overlay.remove()")
+    null_pos = src.find("self._batsignal_overlay = None")
+    assert remove_pos != -1
+    assert null_pos != -1
+    assert remove_pos < null_pos
