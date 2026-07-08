@@ -390,14 +390,15 @@ Architecture: Custom Textual UI (Option B, stranger-code style) + local editable
 
 ---
 
-## Phase 7 — Bat-Signal Widget — PLANNED
+## Phase 7 — Bat-Signal Widget — COMPLETE
 
-Full plan: see `tasks/phase7-plan.md` (authoritative). This checklist
-mirrors that doc's per-commit shape; check-offs happen per commit.
+Full plan: see `tasks/archive/phase7-plan.md` (archived on close).
+This checklist mirrors that doc's per-commit shape with check-offs
+added per commit.
 
-### Batch 13 — `/batsignal` core (widget + wiring + tests)
+### Batch 13 — `/batsignal` core — 4 of 4 landed
 
-- [ ] `feat(batman-cli): add BatSignalOverlay widget with flicker animation`
+- [x] `feat(batman-cli): add BatSignalOverlay widget with flicker animation` (`e7bf09e`)
   - New file `batman_code/widgets/batsignal.py`:
     - `BAT_SYMBOL_ASCII` constant (7-line bat symbol from CLAUDE.md
       Phase 1 spec)
@@ -420,7 +421,7 @@ mirrors that doc's per-commit shape; check-offs happen per commit.
     stays in `[0.3, 1.5]`, `render()` colors match state, ASCII
     constant is exactly the spec's 7-line string.
 
-- [ ] `feat(batman-cli): wire /batsignal command dispatch + autocomplete`
+- [x] `feat(batman-cli): wire /batsignal command dispatch + autocomplete` (`96f75b2`)
   - `widgets/autocomplete.py::SLASH_COMMANDS` — append 13th entry
     `("/batsignal", "Toggle bat-signal overlay")`.
   - `app.py`:
@@ -443,7 +444,7 @@ mirrors that doc's per-commit shape; check-offs happen per commit.
     - Await `.remove()` before nulling to avoid a double-toggle race
       leaking an overlay.
 
-- [ ] `test(batman-cli): cover /batsignal wiring + autocomplete registration`
+- [x] `test(batman-cli): cover /batsignal wiring + autocomplete registration` (`a422c38`)
   - New `tests/widgets/test_autocomplete.py` (autocomplete.py was
     deep-import verbatim in Phase 5 — first test file for it):
     - `/batsignal` present in `SLASH_COMMANDS` with the exact
@@ -460,21 +461,30 @@ mirrors that doc's per-commit shape; check-offs happen per commit.
       (source-inspection check, matches the pattern for other kw-only
       param defaults in test_app.py)
 
-- [ ] `docs: mark Phase 7 COMPLETE` — LAST
-  - Bump this checklist (Phase 7 header → COMPLETE, all 4 commits
-    checked off with hashes).
-  - Bump `tasks/phase7-plan.md` status banner to COMPLETE with final
-    commit range + total tally.
-  - Update `MEMORY.md` topic files:
-    - `project_status.md`: Phase 7 → COMPLETE, mark **Phase 10
-      (end-to-end verification) NEXT**.
-    - `project_deferred_work.md`: remove `/batsignal` core from
-      "deferred"; keep the easter-eggs backlog.
-    - `project_key_files.md`: add `widgets/batsignal.py` entry.
-    - `MEMORY.md` index if any topic-file one-liner needs refreshing.
-  - `git mv tasks/phase7-plan.md tasks/archive/` (matches Phase
-    5/8/9 archive pattern). Update `tasks/archive/README.md` with the
-    Phase 7 row + close-out commit hash.
+- [x] `docs: mark Phase 7 COMPLETE` (this commit)
+  - Bumps this checklist (Phase 7 header → COMPLETE, Batch 13
+    → 4 of 4, all commits checked off with hashes).
+  - Bumps `tasks/phase7-plan.md` status banner to COMPLETE with final
+    commit range + total tally. Plan doc moved to
+    `tasks/archive/phase7-plan.md` (matches Phase 5/8/9 archive
+    pattern).
+  - Updates `tasks/archive/README.md` with the Phase 7 row + close-out
+    commit hash.
+  - Updates `MEMORY.md` topic files:
+    - `project_status.md`: `[x] Phase 7: Bat-Signal Overlay —
+      COMPLETE`; marks **Phase 10 (end-to-end verification) as NEXT**.
+    - `project_deferred_work.md`: `/batsignal` core section removed
+      (it's shipped); easter-eggs backlog stays under its own heading.
+    - `project_key_files.md`: adds `widgets/batsignal.py` +
+      `tests/widgets/test_batsignal.py` + `tests/widgets/
+      test_autocomplete.py` entries.
+    - `MEMORY.md` index one-liners refreshed where Phase 7 status is
+      mentioned.
+
+**Phase 7 tally**: 4 commits (`e7bf09e..<this>`), 28 new tests
+(15 widget + 13 wiring), **316 tests passing across the suite**,
+zero `deepagents_cli` references in source (only remaining
+`deepagents.*` refs are SDK imports).
 
 ### Out of scope (parked for future planning)
 

@@ -1,11 +1,51 @@
-# Phase 7 — Bat-Signal Overlay (`/batsignal`) — Implementation Plan
+# Phase 7 — Bat-Signal Overlay (`/batsignal`) — COMPLETE
 
 ## Status
 
-**Not started.** All prerequisites are in place — this plan is the
-kickoff. Locked at planning: `tasks/deferred.md` is the historical
-source of truth for what got deferred and why; this doc is the
-authoritative Phase 7 plan going forward.
+**All 4 Batch 13 commits landed** and pushed to `origin/main`
+(`e7bf09e..<this commit>`). **Suite: 316 passed** (28 new + 288 prior;
+zero `deepagents_cli` references anywhere under `libs/batman-cli/`;
+only remaining `deepagents.*` refs are SDK imports `from deepagents.
+backends import ...` which reference the first-party deepagents
+package).
+
+Commits landed in Batch 13:
+
+- `e7bf09e` `feat(batman-cli): add BatSignalOverlay widget with
+  flicker animation` — new `widgets/batsignal.py` (~140 LOC) with
+  the 7-line ASCII symbol, `_FLICKER_COLORS`/`_STATES`/
+  `_INTERVAL_RANGE`/`_STATE_WEIGHTS` tables, pure helpers
+  `_pick_next_state()` + `_next_interval()` (RNG-parameterized for
+  deterministic tests), `BatSignalOverlay(Widget)` with self-
+  rescheduling `set_timer` loop (jittered per-tick interval) and
+  4-state render() branch table. 15 bundled tests.
+- `96f75b2` `feat(batman-cli): wire /batsignal command dispatch +
+  autocomplete` — `SLASH_COMMANDS` grew 12 → 13 with
+  `("/batsignal", "Toggle bat-signal overlay")` appended;
+  `BatmanApp.__init__` gained `_batsignal_overlay: BatSignalOverlay
+  | None = None` (widget reference IS the state — no separate bool);
+  `_handle_command` gained `elif cmd == "/batsignal":` branch;
+  `_toggle_batsignal()` implements the toggle with await-remove-
+  before-null double-toggle race guard.
+- `a422c38` `test(batman-cli): cover /batsignal wiring +
+  autocomplete registration` — first test file for
+  `widgets/autocomplete.py` (4 tests) + 9 source-inspection
+  regression guards appended to `tests/test_app.py`: import wiring,
+  init default, dispatch elif branch, `_toggle_batsignal` echo +
+  themed messages ("Bat-signal engaged." + "Bat-signal stood
+  down.") + `id="batsignal-overlay"` mount + remove-before-null
+  ordering enforced via string position comparison.
+- `<this commit>` `docs: mark Phase 7 COMPLETE` — bumps `todo.md`
+  header + this file's status banner + `archive/README.md` + memory
+  topic files. Moves this plan doc to `tasks/archive/`.
+
+**Runtime status**: `/batsignal` is registered and dispatched. The
+widget is importable, the CSS layer applies, the toggle helper wires
+up mount/remove correctly. Interactive verification (actual flicker
++ toggle behavior in a live terminal) is deferred to Phase 10.
+
+**Next: Phase 10** — end-to-end interactive verification. Only phase
+remaining before the project is fully shipped.
 
 ## Context
 
