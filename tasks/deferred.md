@@ -7,30 +7,42 @@ future-us doesn't re-litigate the decision.
 
 ---
 
-## Phase 7 — `/batsignal` core is now PLANNED (see `tasks/phase7-plan.md`)
+## Phase 7 — `/batsignal` core has SHIPPED
 
-The three concrete deliverables previously tracked here —
-`SLASH_COMMANDS` autocomplete entry, `widgets/batsignal.py` widget,
-and the `app.py::_handle_command` dispatch handler — are now covered
-by the Phase 7 plan doc. See `tasks/phase7-plan.md` for the full
-Batch 13 shape (4 commits: widget → wiring → tests → docs closeout).
+Closed in Batch 13 (`e7bf09e..613d24b`, 4 commits, 28 new tests).
+See `tasks/archive/phase7-plan.md` for the historical plan and
+`project_gotham_vocabulary.md` for the locked wording (`"Bat-signal
+engaged."` / `"Bat-signal stood down."`).
 
-Historical note: these items lived here from the start of the port
-until Phase 9 closed, since Phase 7 was blocked on Phase 8's layered
-chat container and dispatch seam.
+## Phase 10 — End-to-end verification (NEXT, final phase)
 
-## Phase 7 — Easter eggs backlog (unscoped)
+Interactive terminal smoke of the assembled app. Nothing else blocks
+this — full checklist:
 
-Per `CLAUDE.md` Phase 2 spec, still parked pending collaborative
-planning once the `/batsignal` core lands:
+- Install: `cd libs/batman-cli && uv sync && uv run bat-code --help`
+- Each persona loads: `bat-code --persona {batman,alfred,oracle,
+  nightwing,joker}`
+- Splash screen plays and is keypress-skippable
+- Joker warning modal appears for `--persona joker`
+- Basic agent interaction (send a message, receive a streamed
+  response) works
+- Tool approval flow in DETECTIVE MODE
+- `--auto-approve` / DARK KNIGHT MODE bypasses prompts
+- Case resume: `bat-code -r` reopens most-recent case
+- `--no-splash` skips animation
+- `/batsignal` toggles overlay on/off without breaking chat; flicker
+  feels like a real spotlight
+- `~/.bat-code/sessions.db` gets created correctly
+
+## Easter eggs backlog (unscoped)
+
+Per `CLAUDE.md` Phase 2 spec — parked pending collaborative planning
+when there's appetite:
 
 - Villain-of-the-day easter eggs
 - Gotham weather status bar (extra slot in `status.py`)
 - Additional custom loading screens beyond `batcave.py`
 - Additional custom slash commands beyond `/batsignal`
-
-These are unscoped — to be planned collaboratively when Phase 7 core
-closes.
 
 ---
 
@@ -53,11 +65,6 @@ revisited. Not blocking anything.
 
 ---
 
-## Future Phases (high-level)
+## Implementation order (from `MEMORY.md`)
 
-- **Phase 7** — bat-signal overlay + easter eggs (see above). Next up.
-- **Phase 10** — end-to-end verification, smoke-test against real
-  agent, persona switching, splash skip, `/batsignal` toggle.
-
-Implementation order (from `MEMORY.md`):
-Phase 0 → 6 → 1 → 2 → 3 → 4 → 5 → 8 → 9 → **7** → 10.
+Phase 0 → 6 → 1 → 2 → 3 → 4 → 5 → 8 → 9 → 7 → **10**.

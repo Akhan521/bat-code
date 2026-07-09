@@ -121,8 +121,8 @@ or LangSmith Studio for isolated code execution.
 
 **Slash commands** (typed at the chat prompt):
 `/help`, `/clear`, `/model`, `/threads`, `/remember`, `/tokens`,
-`/trace`, `/version`, `/docs`, `/changelog`, `/feedback`, `/quit`.
-`/batsignal` (bat-symbol overlay toggle) is deferred to Phase 7.
+`/trace`, `/version`, `/docs`, `/changelog`, `/feedback`, `/quit`,
+`/batsignal` (toggles a flickering ASCII bat-symbol overlay).
 
 ## Data directory
 
@@ -150,7 +150,7 @@ Batman color palette (defined in `batman_code/config.py`):
 
 ## Development
 
-Run the test suite (288 tests, ~3s):
+Run the test suite (316 tests, ~3s):
 
 ```powershell
 uv run --group dev pytest
@@ -172,10 +172,11 @@ imports.
   spec, personas + palette details
 - [`tasks/todo.md`](../../tasks/todo.md) — master phased checklist
 - [`tasks/deferred.md`](../../tasks/deferred.md) — punted work
-  (Phase 7 `/batsignal` widget, easter eggs)
+  (easter-eggs backlog, Phase 10 verification checklist)
 - [`tasks/archive/`](../../tasks/archive/) — historical phase plans
 
 ## Status
 
-Phases 0–6, 8, 9 complete. **Phase 7** (`/batsignal` overlay + easter
-eggs) and **Phase 10** (end-to-end verification) remain.
+Phases 0–9 complete. **Phase 10** (end-to-end verification) is the
+final phase — interactive smoke of each persona, splash, `/batsignal`
+toggle, tool approval, and case resume in a live terminal.

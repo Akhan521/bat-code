@@ -852,11 +852,20 @@ first-party deepagents package imports).
 
 ---
 
-## Phase 10 — Verification
+## Phase 10 — End-to-End Verification — NEXT (final phase)
+
+Interactive terminal smoke of the assembled `bat-code` app. Nothing
+else blocks this — all 9 prior phases are shipped and 316 tests pass
+on `main`. A Phase 10 plan doc will be drafted at kickoff (mirrors the
+Phase 5/7/8/9 pattern); it should land in `tasks/phase10-plan.md`
+and archive to `tasks/archive/` on close.
+
+### Checklist
 
 - [ ] Install package: `cd libs/batman-cli && uv sync && uv run bat-code --help`
 - [ ] Test each persona loads: `bat-code --persona alfred`, `--persona joker`, etc.
 - [ ] Test splash screen plays and is skippable with keypress
+- [ ] Test joker warning modal appears for `--persona joker`
 - [ ] Test `/batsignal` toggles on and off without breaking chat
 - [ ] Test basic agent interaction (send a message, receive streamed response)
 - [ ] Test tool approval flow in DETECTIVE MODE
