@@ -247,9 +247,15 @@ def show_help() -> None:
         "  -p, --persona NAME         Persona to use (batman, alfred, oracle, nightwing, joker)"  # noqa: E501
     )
     console.print("  -M, --model MODEL          Model to use (e.g., gpt-4o)")
+    console.print(
+        "  --model-params JSON        Extra model kwargs as JSON (e.g., '{\"temperature\": 0.7}')"  # noqa: E501
+    )
     console.print("  -m, --message TEXT         Initial prompt to auto-submit on start")
     console.print(
         "  --auto-approve             Auto-approve all tool calls — DARK KNIGHT MODE (toggle: Shift+Tab)"  # noqa: E501
+    )
+    console.print(
+        "  --no-splash                Skip the Batcave loading animation on startup"
     )
     console.print("  --sandbox TYPE             Remote sandbox for execution")
     console.print(
@@ -259,6 +265,12 @@ def show_help() -> None:
         "  --sandbox-setup PATH       Setup script to run in sandbox after creation"
     )
     console.print("  -n, --non-interactive MSG  Run a single task and exit")
+    console.print(
+        "  -q, --quiet                Clean output for piping (requires -n or piped stdin)"  # noqa: E501
+    )
+    console.print(
+        "  --no-stream                Buffer full response before writing to stdout (requires -n)"  # noqa: E501
+    )
     console.print(
         "  --shell-allow-list CMDS    Comma-separated local shell commands to allow"
     )
