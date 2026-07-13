@@ -35,6 +35,9 @@ Deep Agents is an agent harness.  An opinionated, ready-to-run agent out of the 
 > [!NOTE]
 > Looking for the JS/TS library? Check out [deepagents.js](https://github.com/langchain-ai/deepagentsjs).
 
+> [!NOTE]
+> This fork also ships **bat-code**, a Batman-themed AI coding TUI built on the deepagents SDK. See [`libs/batman-cli/`](libs/batman-cli/).
+
 ## Quickstart
 
 ```bash
