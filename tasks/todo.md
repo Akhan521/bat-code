@@ -856,7 +856,7 @@ first-party deepagents package imports).
 
 Full plan: see `tasks/phase10-plan.md`.
 Interactive terminal smoke of the assembled `bat-code` app. Nothing
-else blocks this — all 9 prior phases are shipped and 316 tests pass
+else blocks this — all 9 prior phases are shipped and 334 tests pass
 on `main`. Batch 14 kicks off with this commit (plan doc + this
 header bump); realistic total is 2–5 commits (plan doc + 0–3 fixes +
 closeout), depending on what live smoke surfaces.
@@ -868,9 +868,14 @@ closeout), depending on what live smoke surfaces.
     procedure, verification recipe, success criteria.
   - This section flipped from "NEXT" to "IN PROGRESS" with the
     plan-doc pointer above.
-- [ ] Any `fix(...)` commits surfaced during live smoke (0–3, variable)
+- [~] Any `fix(...)` commits surfaced during live smoke (0–3, variable)
   - Scoped, with regression tests bundled if <30 LOC.
   - Opportunistic `approval.py` Esc-binding fix if in the way.
+  - [x] `fix(batman-cli): surface 4 missing CLI flags in show_help()`
+    (`f878e70`) — `--help` smoke caught `--no-splash`, `--model-params`,
+    `-q/--quiet`, `--no-stream` registered in argparse but absent from
+    `ui.show_help()`. Fix + parametrized source-inspection guard in
+    `tests/test_ui.py`. Suite: 334 passed (18 new + 316 prior).
 - [ ] `docs: mark Phase 10 COMPLETE — project shipped`
   - Marks every checkbox below with observed behavior noted.
   - Flips plan-doc status banner to COMPLETE; `git mv` to
@@ -880,7 +885,8 @@ closeout), depending on what live smoke surfaces.
 
 ### Checklist (observations recorded at closeout)
 
-- [ ] Install package: `cd libs/batman-cli && uv sync && uv run bat-code --help`
+- [x] Install package: `cd libs/batman-cli && uv sync && uv run bat-code --help`
+  — verified; `--help` smoke surfaced the `show_help()` gap fixed in `f878e70`.
 - [ ] Test each persona loads: `bat-code --persona alfred`, `--persona joker`, etc.
 - [ ] Test splash screen plays and is skippable with keypress
 - [ ] Test joker warning modal appears for `--persona joker`

@@ -150,7 +150,7 @@ Batman color palette (defined in `batman_code/config.py`):
 
 ## Development
 
-Run the test suite (316 tests, ~3s):
+Run the test suite (334 tests, ~3s):
 
 ```powershell
 uv run --group dev pytest

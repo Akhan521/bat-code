@@ -2,13 +2,15 @@
 
 ## Status
 
-**Not started.** Kickoff commit (this doc + `todo.md` bump) is the
-first commit of Batch 14. Phase 10 is the **final phase** — after
+**In progress.** Kickoff commit (`b374c22`, this doc + `todo.md` bump)
+landed Batch 14. First live-smoke bug already fixed: `f878e70`
+surfaced 4 CLI flags that were registered in argparse but missing from
+`ui.show_help()` output. Phase 10 is the **final phase** — after
 close, the bat-code port is fully shipped.
 
-Prior state: 316 tests passing on `main` (`f5e0196`), all 14 widgets
-ported, `bat-code` end-to-end launchable, `/batsignal` shipped in
-Batch 13.
+Prior state at kickoff: 316 tests passing on `main` (`f5e0196`), all
+14 widgets ported, `bat-code` end-to-end launchable, `/batsignal`
+shipped in Batch 13. The `f878e70` fix bumped the suite to **334**.
 
 ## Context
 
